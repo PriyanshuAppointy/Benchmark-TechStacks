@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -38,22 +39,43 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start server in goroutine to allow for graceful shutdown
+	// Start server in goroutine
+	serverErrChan := make(chan error, 1)
 	go func() {
-		log.Printf("Starting Go HTTP server on port %s\n", server.Addr)
+		fmt.Printf("Starting Go HTTP server on port %s\n", server.Addr)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v\n", err)
-			os.Exit(1)
+			log.Printf("Server error: %v\n", err)
+			serverErrChan <- err
 		}
 	}()
 
-	// Give the server a moment to start
+	// Give the server a moment to start and check for immediate errors
 	time.Sleep(100 * time.Millisecond)
 
-	// Wait for interrupt signal
-	<-sigChan
-	log.Println("Server shutting down...")
+	// Check if server started successfully
+	select {
+	case err := <-serverErrChan:
+		log.Fatalf("Server failed to start: %v\n", err)
+	default:
+		fmt.Println("Go HTTP server started successfully")
+	}
+
+	// For CI environments, run for a maximum time instead of waiting indefinitely
+	maxRunTime := 5 * time.Minute
+	timeoutChan := time.After(maxRunTime)
+
+	// Wait for interrupt signal or timeout
+	select {
+	case <-sigChan:
+		fmt.Println("Received shutdown signal")
+	case <-timeoutChan:
+		fmt.Println("Maximum run time reached, shutting down")
+	case err := <-serverErrChan:
+		log.Fatalf("Server error: %v\n", err)
+	}
+
+	fmt.Println("Server shutting down...")
 
 	// Create context with timeout for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -61,9 +83,9 @@ func main() {
 
 	// Attempt graceful shutdown
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server shutdown error: %v\n", err)
+		log.Printf("Server shutdown error: %v\n", err)
 		os.Exit(1)
 	}
 
-	log.Println("Server stopped")
+	fmt.Println("Server stopped gracefully")
 }

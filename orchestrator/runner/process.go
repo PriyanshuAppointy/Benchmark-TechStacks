@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"performance-benchmark-suite/orchestrator/config"
@@ -65,13 +67,144 @@ func (r *Runner) RunBenchmark(tech, test string, params map[string]string) (*rep
 		return nil, fmt.Errorf("failed to get benchmark config: %v", err)
 	}
 
-	var cmd *exec.Cmd
+	// Handle server tests specially
 	if benchmark.Type == "server" {
-		cmd, err = r.buildServerCommand(tech, test, params)
-	} else {
-		cmd, err = r.buildBenchmarkCommand(tech, test, params)
+		return r.runServerBenchmark(tech, test, params)
 	}
 
+	// Handle regular benchmark tests
+	return r.runRegularBenchmark(tech, test, params)
+}
+
+func (r *Runner) runServerBenchmark(tech, test string, params map[string]string) (*report.BenchmarkResult, error) {
+	fmt.Printf("\n=== Starting HTTP Server Benchmark: %s ===\n", tech)
+
+	// Build server command
+	serverCmd, err := r.buildBenchmarkCommand(tech, test, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build server command: %v", err)
+	}
+
+	// Capture server stdout and stderr for debugging
+	serverStdout, err := serverCmd.StdoutPipe()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server stdout pipe: %v", err)
+	}
+
+	serverStderr, err := serverCmd.StderrPipe()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server stderr pipe: %v", err)
+	}
+
+	// Start capturing server logs
+	var serverStdoutData strings.Builder
+	var serverStderrData strings.Builder
+
+	go func() {
+		scanner := bufio.NewScanner(serverStdout)
+		for scanner.Scan() {
+			line := scanner.Text()
+			fmt.Printf("[%s-server-stdout] %s\n", tech, line)
+			serverStdoutData.WriteString(line + "\n")
+		}
+	}()
+
+	go func() {
+		scanner := bufio.NewScanner(serverStderr)
+		for scanner.Scan() {
+			line := scanner.Text()
+			fmt.Printf("[%s-server-stderr] %s\n", tech, line)
+			serverStderrData.WriteString(line + "\n")
+		}
+	}()
+
+	// Start the server
+	fmt.Printf("Starting %s HTTP server...\n", tech)
+	if err := serverCmd.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start %s server: %v", tech, err)
+	}
+
+	// Ensure server cleanup
+	defer func() {
+		if serverCmd.Process != nil {
+			fmt.Printf("Stopping %s server...\n", tech)
+			serverCmd.Process.Kill()
+			serverCmd.Wait() // Clean up zombie process
+		}
+	}()
+
+	// Health check with retries
+	maxRetries := 30 // 15 seconds total
+	fmt.Printf("Waiting for %s server to be ready (health check)...\n", tech)
+
+	var healthCheckSuccess bool
+	for i := 0; i < maxRetries; i++ {
+		time.Sleep(500 * time.Millisecond)
+
+		// Check if server process is still running
+		if serverCmd.Process != nil {
+			if proc, err := os.FindProcess(serverCmd.Process.Pid); err == nil {
+				// Try to signal the process to check if it's alive
+				if err := proc.Signal(syscall.Signal(0)); err != nil {
+					return nil, fmt.Errorf("server process died during startup - stdout: %s, stderr: %s",
+						serverStdoutData.String(), serverStderrData.String())
+				}
+			}
+		}
+
+		// Try health check
+		client := &http.Client{Timeout: 1 * time.Second}
+		resp, err := client.Get("http://localhost:3000/health")
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode == 200 {
+				fmt.Printf("%s server is ready!\n", tech)
+				healthCheckSuccess = true
+				break
+			}
+		}
+	}
+
+	if !healthCheckSuccess {
+		return nil, fmt.Errorf("server health check failed after %d retries - stdout: %s, stderr: %s",
+			maxRetries, serverStdoutData.String(), serverStderrData.String())
+	}
+
+	// Build and run wrk command
+	duration := params["duration"]
+	if duration == "" {
+		duration = "15s"
+	}
+	connections := params["connections"]
+	if connections == "" {
+		connections = "100"
+	}
+
+	fmt.Printf("Running load test against %s server (duration: %s, connections: %s)...\n", tech, duration, connections)
+	wrkCmd := exec.Command("wrk",
+		"-t", strconv.Itoa(runtime.NumCPU()),
+		"-c", connections,
+		"-d", duration,
+		"http://localhost:3000")
+
+	wrkCmd.Dir = r.projectRoot
+
+	// Run wrk and capture output
+	wrkOutput, err := wrkCmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("wrk failed: %v, output: %s, server stdout: %s, server stderr: %s",
+			err, string(wrkOutput), serverStdoutData.String(), serverStderrData.String())
+	}
+
+	fmt.Printf("Load test completed for %s\n", tech)
+	fmt.Printf("wrk output:\n%s\n", string(wrkOutput))
+
+	// Parse wrk output to extract metrics
+	return r.parseWrkOutput(tech, test, params, string(wrkOutput))
+}
+
+func (r *Runner) runRegularBenchmark(tech, test string, params map[string]string) (*report.BenchmarkResult, error) {
+	cmd, err := r.buildBenchmarkCommand(tech, test, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build command: %v", err)
 	}
@@ -177,6 +310,44 @@ func (r *Runner) RunBenchmark(tech, test string, params map[string]string) (*rep
 	return result, nil
 }
 
+func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, output string) (*report.BenchmarkResult, error) {
+	// Parse wrk output to extract RPS and latency
+	lines := strings.Split(output, "\n")
+	var requestsPerSecond float64
+	var latencyMs float64
+
+	for _, line := range lines {
+		if strings.Contains(line, "Requests/sec:") {
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				if rps, err := strconv.ParseFloat(parts[1], 64); err == nil {
+					requestsPerSecond = rps
+				}
+			}
+		}
+		if strings.Contains(line, "Latency") && strings.Contains(line, "ms") {
+			// Extract latency from line like "Latency     1.23ms    2.34ms   5.67ms   89.01%"
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				latencyStr := strings.TrimSuffix(parts[1], "ms")
+				if lat, err := strconv.ParseFloat(latencyStr, 64); err == nil {
+					latencyMs = lat
+				}
+			}
+		}
+	}
+
+	return &report.BenchmarkResult{
+		Tech:       tech,
+		Test:       test,
+		Parameters: params,
+		Metrics: report.Metrics{
+			RequestsPerSecond: requestsPerSecond,
+			LatencyAvgMs:      latencyMs,
+		},
+	}, nil
+}
+
 func (r *Runner) buildBenchmarkCommand(tech, test string, params map[string]string) (*exec.Cmd, error) {
 	benchmark, err := r.config.GetBenchmark(tech, test)
 	if err != nil {
@@ -195,45 +366,6 @@ func (r *Runner) buildBenchmarkCommand(tech, test string, params map[string]stri
 	cmd.Dir = r.projectRoot
 
 	return cmd, nil
-}
-
-func (r *Runner) buildServerCommand(tech, test string, params map[string]string) (*exec.Cmd, error) {
-	// For server tests, we need to start the server first, then run wrk
-	serverCmd, err := r.buildBenchmarkCommand(tech, test, params)
-	if err != nil {
-		return nil, err
-	}
-
-	// Start the server
-	if err := serverCmd.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start server: %v", err)
-	}
-
-	// Wait a bit for server to start
-	time.Sleep(2 * time.Second)
-
-	// Build wrk command
-	duration := params["duration"]
-	if duration == "" {
-		duration = "15s"
-	}
-	connections := params["connections"]
-	if connections == "" {
-		connections = "100"
-	}
-
-	wrkCmd := exec.Command("wrk",
-		"-t", strconv.Itoa(runtime.NumCPU()),
-		"-c", connections,
-		"-d", duration,
-		"http://localhost:3000")
-
-	// Set working directory
-	wrkCmd.Dir = r.projectRoot
-
-	// We'll need to handle the server process cleanup
-	// For now, let's just run wrk and parse its output
-	return wrkCmd, nil
 }
 
 func (r *Runner) monitorProcess(ctx context.Context, proc *process.Process, metricsChan chan<- ProcessMetrics) {

@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tech: ${{ fromJson(github.event.inputs.techs || '"all"') == 'all' && '["go","bun","node"]' || format('["{0}"]', github.event.inputs.techs) }}
+        tech: [go, bun, node]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js

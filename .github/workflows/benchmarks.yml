@@ -18,6 +18,8 @@ on:
           - go
           - bun
           - node
+          - hono-bun
+          - hono-node
         default: all
 
 permissions:
@@ -39,12 +41,31 @@ jobs:
       - name: Save empty reports dir
         run: mkdir -p reports
 
-  benchmarks:
+  get-technologies:
     needs: clean-reports
+    runs-on: ubuntu-latest
+    outputs:
+      technologies: ${{ steps.get-techs.outputs.technologies }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+      - name: Get technologies from config
+        id: get-techs
+        run: |
+          # Extract technology names from technologies.yaml
+          techs=$(yq eval '.technologies | keys | .[] | select(. != "null")' config/technologies.yaml | jq -R -s -c 'split("\n")[:-1]')
+          echo "technologies=$techs" >> $GITHUB_OUTPUT
+          echo "Found technologies: $techs"
+
+  benchmarks:
+    needs: get-technologies
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tech: [go, bun, node]
+        tech: ${{ fromJson(needs.get-technologies.outputs.technologies) }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js

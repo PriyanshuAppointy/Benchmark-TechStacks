@@ -85,6 +85,19 @@ jobs:
           cd orchestrator && go mod tidy
           cd ..
           node scripts/generate_test_data.js
+          # Install npm dependencies for framework benchmarks
+          if [ -f benchmarks/hono-node/package.json ]; then
+            echo "Installing hono-node dependencies..."
+            cd benchmarks/hono-node && npm install && cd ../..
+          fi
+          if [ -f benchmarks/hono-bun/package.json ]; then
+            echo "Installing hono-bun dependencies..."
+            cd benchmarks/hono-bun && bun install && cd ../..
+          fi
+          if [ -f benchmarks/bun/package.json ]; then
+            echo "Installing bun dependencies..."
+            cd benchmarks/bun && bun install && cd ../..
+          fi
           # Install wrk for HTTP benchmarking
           sudo apt-get update
           sudo apt-get install -y wrk

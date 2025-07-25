@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -40,10 +40,10 @@ func main() {
 
 	// Start server in goroutine to allow for graceful shutdown
 	go func() {
-		fmt.Printf("Starting Go HTTP server on port %s\n", server.Addr)
+		log.Printf("Starting Go HTTP server on port %s\n", server.Addr)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
+			log.Fatalf("Server error: %v\n", err)
 			os.Exit(1)
 		}
 	}()
@@ -53,7 +53,7 @@ func main() {
 
 	// Wait for interrupt signal
 	<-sigChan
-	fmt.Println("Server shutting down...")
+	log.Println("Server shutting down...")
 
 	// Create context with timeout for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -61,9 +61,9 @@ func main() {
 
 	// Attempt graceful shutdown
 	if err := server.Shutdown(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "Server shutdown error: %v\n", err)
+		log.Fatalf("Server shutdown error: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Server stopped")
+	log.Println("Server stopped")
 }

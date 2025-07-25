@@ -1,0 +1,33 @@
+# Node modules and package managers
+node_modules/
+**/node_modules/
+
+# Bun
+.bun/
+
+# Reports and generated data
+reports/
+test_data/temp_output*
+
+# Build artifacts
+orchestrator/benchmark-cli
+*.out
+*.exe
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# TypeScript build outputs
+benchmarks/bun/dist/
+benchmarks/node/dist/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VSCode
+.vscode/ 

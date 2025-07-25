@@ -1,0 +1,99 @@
+---
+alwaysApply: true
+---
+
+# Benchmark Implementation Standards
+
+## JSON Output Format
+All benchmark scripts MUST output a single JSON object to stdout upon completion:
+
+```json
+{
+  "operations": 1000,
+  "totalTimeMs": 1234.56,
+  "operationsPerSecond": 810.23
+}
+```
+
+## Required Fields
+- `operations` - Number of operations performed (integer)
+- `totalTimeMs` - Total execution time in milliseconds (float)
+- `operationsPerSecond` - Calculated operations per second (float)
+
+## Optional Fields
+- `mode` - Test mode for concurrency tests ("single" or "multi")
+- `requestsPerSecond` - For HTTP server tests
+- `latencyAvgMs` - Average latency for HTTP tests
+
+## Error Handling
+- All errors must be written to stderr
+- Use `process.exit(1)` or equivalent for failure
+- Never output JSON on error - only on success
+
+## Command Line Arguments
+Use consistent argument parsing:
+- `--file=<path>` for input files
+- `--output=<path>` for output files  
+- `--iterations=<number>` for test iterations
+- `--size=<bytes>` for data size
+- `--mode=<single|multi>` for concurrency tests
+
+## Implementation Pattern
+Follow this structure:
+1. Parse command line arguments
+2. Validate inputs
+3. Start timing
+4. Execute benchmark operations
+5. End timing
+6. Calculate metrics
+7. Output JSON to stdout
+
+## Example Implementation
+See [benchmarks/go/file_read/main.go](mdc:benchmarks/go/file_read/main.go) for the standard pattern.# Benchmark Implementation Standards
+
+## JSON Output Format
+All benchmark scripts MUST output a single JSON object to stdout upon completion:
+
+```json
+{
+  "operations": 1000,
+  "totalTimeMs": 1234.56,
+  "operationsPerSecond": 810.23
+}
+```
+
+## Required Fields
+- `operations` - Number of operations performed (integer)
+- `totalTimeMs` - Total execution time in milliseconds (float)
+- `operationsPerSecond` - Calculated operations per second (float)
+
+## Optional Fields
+- `mode` - Test mode for concurrency tests ("single" or "multi")
+- `requestsPerSecond` - For HTTP server tests
+- `latencyAvgMs` - Average latency for HTTP tests
+
+## Error Handling
+- All errors must be written to stderr
+- Use `process.exit(1)` or equivalent for failure
+- Never output JSON on error - only on success
+
+## Command Line Arguments
+Use consistent argument parsing:
+- `--file=<path>` for input files
+- `--output=<path>` for output files  
+- `--iterations=<number>` for test iterations
+- `--size=<bytes>` for data size
+- `--mode=<single|multi>` for concurrency tests
+
+## Implementation Pattern
+Follow this structure:
+1. Parse command line arguments
+2. Validate inputs
+3. Start timing
+4. Execute benchmark operations
+5. End timing
+6. Calculate metrics
+7. Output JSON to stdout
+
+## Example Implementation
+See [benchmarks/go/file_read/main.go](mdc:benchmarks/go/file_read/main.go) for the standard pattern.

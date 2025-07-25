@@ -1,0 +1,134 @@
+---
+globs: benchmarks/*
+alwaysApply: false
+---
+# Configuration Standards
+
+## Technology Configuration Structure
+All technologies in [config/technologies.yaml](mdc:config/technologies.yaml) must follow this structure:
+
+```yaml
+technology_key:
+  name: "Descriptive Technology Name"
+  version_command: ["command", "args"]
+  benchmarks:
+    benchmark_name:
+      command: ["executable", "args"]
+      type: "benchmark|server"
+      port: 3000  # only for server type
+      default_params:
+        param_name: "default_value"
+```
+
+## Naming Requirements
+- Technology keys: lowercase, descriptive, no spaces
+- Technology names: full descriptive names with proper capitalization
+- Benchmark names: snake_case, descriptive of the operation
+- Parameter names: lowercase, descriptive
+
+## Required Fields
+- `name` - Human-readable technology name
+- `version_command` - Array of command and args to get version
+- `benchmarks` - Map of benchmark configurations
+
+## Benchmark Configuration
+- `command` - Array of executable and arguments
+- `type` - Either "benchmark" or "server"
+- `port` - Required for server type benchmarks
+- `default_params` - Optional map of default parameters
+
+## Validation Rules
+- All technology keys must be unique
+- All benchmark names within a technology must be unique
+- Commands must be valid executable paths
+- Version commands must return version information
+- Server benchmarks must specify a port
+
+## Example Valid Configuration
+```yaml
+python:
+  name: "Python 3.x"
+  version_command: ["python", "--version"]
+  benchmarks:
+    file_read:
+      command: ["python", "benchmarks/python/file_read/main.py"]
+      type: "benchmark"
+      default_params:
+        file: "test_data/medium.txt"
+        iterations: "1000"
+    http_server:
+      command: ["python", "benchmarks/python/http_server/main.py"]
+      type: "server"
+      port: 3000
+```
+
+## Common Patterns
+- Use relative paths from project root for benchmark commands
+- Include all necessary arguments in command arrays
+- Provide sensible default parameters
+- Use descriptive names that clearly indicate the technology variant
+# Configuration Standards
+
+## Technology Configuration Structure
+All technologies in [config/technologies.yaml](mdc:config/technologies.yaml) must follow this structure:
+
+```yaml
+technology_key:
+  name: "Descriptive Technology Name"
+  version_command: ["command", "args"]
+  benchmarks:
+    benchmark_name:
+      command: ["executable", "args"]
+      type: "benchmark|server"
+      port: 3000  # only for server type
+      default_params:
+        param_name: "default_value"
+```
+
+## Naming Requirements
+- Technology keys: lowercase, descriptive, no spaces
+- Technology names: full descriptive names with proper capitalization
+- Benchmark names: snake_case, descriptive of the operation
+- Parameter names: lowercase, descriptive
+
+## Required Fields
+- `name` - Human-readable technology name
+- `version_command` - Array of command and args to get version
+- `benchmarks` - Map of benchmark configurations
+
+## Benchmark Configuration
+- `command` - Array of executable and arguments
+- `type` - Either "benchmark" or "server"
+- `port` - Required for server type benchmarks
+- `default_params` - Optional map of default parameters
+
+## Validation Rules
+- All technology keys must be unique
+- All benchmark names within a technology must be unique
+- Commands must be valid executable paths
+- Version commands must return version information
+- Server benchmarks must specify a port
+
+## Example Valid Configuration
+```yaml
+python:
+  name: "Python 3.x"
+  version_command: ["python", "--version"]
+  benchmarks:
+    file_read:
+      command: ["python", "benchmarks/python/file_read/main.py"]
+      type: "benchmark"
+      default_params:
+        file: "test_data/medium.txt"
+        iterations: "1000"
+    http_server:
+      command: ["python", "benchmarks/python/http_server/main.py"]
+      type: "server"
+      port: 3000
+```
+
+## Common Patterns
+- Use relative paths from project root for benchmark commands
+- Include all necessary arguments in command arrays
+- Provide sensible default parameters
+- Use descriptive names that clearly indicate the technology variant

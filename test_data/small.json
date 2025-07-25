@@ -1,0 +1,53 @@
+[
+  {
+    "id": 0,
+    "name": "Item_1",
+    "description": "This is a sample item for benchmarking JSON operations",
+    "tags": [
+      "benchmark",
+      "test",
+      "data"
+    ],
+    "metadata": {
+      "created": "2025-07-24T14:16:18.244Z",
+      "version": "1.0.0",
+      "category": "test",
+      "priority": "medium"
+    },
+    "data": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore "
+  },
+  {
+    "id": 1,
+    "name": "Item_2",
+    "description": "This is a sample item for benchmarking JSON operations",
+    "tags": [
+      "benchmark",
+      "test",
+      "data"
+    ],
+    "metadata": {
+      "created": "2025-07-24T14:16:18.244Z",
+      "version": "1.0.0",
+      "category": "test",
+      "priority": "medium"
+    },
+    "data": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore "
+  },
+  {
+    "id": 2,
+    "name": "Item_3",
+    "description": "This is a sample item for benchmarking JSON operations",
+    "tags": [
+      "benchmark",
+      "test",
+      "data"
+    ],
+    "metadata": {
+      "created": "2025-07-24T14:16:18.244Z",
+      "version": "1.0.0",
+      "category": "test",
+      "priority": "medium"
+    },
+    "data": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore "
+  }
+]

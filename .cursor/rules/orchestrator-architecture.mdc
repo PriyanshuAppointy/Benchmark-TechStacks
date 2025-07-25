@@ -1,0 +1,97 @@
+# Orchestrator Architecture Guidelines
+
+## Configuration-Driven Design
+The orchestrator is designed to be configuration-driven. Never hardcode technology-specific logic.
+
+## Key Components
+
+### Configuration Management
+- [orchestrator/config/config.go](mdc:orchestrator/config/config.go) - Loads and validates technology configurations
+- Uses YAML configuration from [config/technologies.yaml](mdc:config/technologies.yaml)
+- Provides validation and lookup methods for technologies and benchmarks
+
+### Runner Logic
+- [orchestrator/runner/process.go](mdc:orchestrator/runner/process.go) - Executes benchmarks and monitors processes
+- Builds commands dynamically from configuration
+- Supports both benchmark and server type tests
+- Monitors CPU and memory usage in real-time
+
+### Report Generation
+- [orchestrator/report/generator.go](mdc:orchestrator/report/generator.go) - Creates JSON reports
+- Gathers system metadata and tool versions dynamically
+- Uses configuration to determine which version commands to run
+
+## Extensibility Principles
+
+### 1. No Hardcoded Technology Lists
+- All technology validation comes from configuration
+- Use `config.ListTechnologies()` and `config.ValidateTechnology()`
+- Never use hardcoded arrays like `[]string{"go", "node", "bun"}`
+
+### 2. Dynamic Command Building
+- Commands are built from configuration, not switch statements
+- Use `config.GetBenchmark()` to get command configuration
+- Support different command types (benchmark vs server)
+
+### 3. Configuration Validation
+- Always validate technologies and benchmarks against configuration
+- Use `config.ValidateBenchmark()` before running tests
+- Skip unsupported combinations gracefully
+
+### 4. Version Detection
+- Version commands are defined in configuration
+- Use `config.Technologies[tech].VersionCommand` for version detection
+- Support any technology that can run command-line tools
+
+## Adding New Features
+
+### New Benchmark Types
+1. Add benchmark configuration to [config/technologies.yaml](mdc:config/technologies.yaml)
+2. Implement benchmark scripts following standards
+3. No orchestrator code changes needed
+
+### New Technology Support
+1. Add technology configuration to [config/technologies.yaml](mdc:config/technologies.yaml)
+2. Implement benchmark scripts
+3. No orchestrator code changes needed
+
+### New Report Fields
+1. Update report structs in [orchestrator/report/generator.go](mdc:orchestrator/report/generator.go)
+2. Update benchmark scripts to output new fields
+3. No configuration changes needed
+
+## Code Patterns
+
+### Loading Configuration
+```go
+cfg, err := config.LoadConfig("")
+if err != nil {
+    return fmt.Errorf("failed to load configuration: %v", err)
+}
+```
+
+### Validating Technologies
+```go
+if !cfg.ValidateTechnology(tech) {
+    return fmt.Errorf("invalid technology: %s", tech)
+}
+```
+
+### Building Commands
+```go
+benchmark, err := cfg.GetBenchmark(tech, test)
+if err != nil {
+    return fmt.Errorf("failed to get benchmark config: %v", err)
+}
+cmd := exec.Command(benchmark.Command[0], benchmark.Command[1:]...)
+```
+
+## Testing Extensibility
+- Test with new technology configurations
+- Verify no hardcoded assumptions
+- Ensure graceful handling of missing technologies
+- Validate configuration loading and parsing
+description:
+globs:
+alwaysApply: false
+---

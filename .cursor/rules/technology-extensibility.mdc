@@ -1,0 +1,87 @@
+# Technology Extensibility Guidelines
+
+## Adding New Technologies
+
+When adding new technologies to the benchmarking framework, follow these guidelines:
+
+### 1. Configuration Structure
+All new technologies must be added to [config/technologies.yaml](mdc:config/technologies.yaml) with the following structure:
+
+```yaml
+technology_key:
+  name: "Descriptive Technology Name"
+  version_command: ["command", "args"]
+  benchmarks:
+    benchmark_name:
+      command: ["executable", "args"]
+      type: "benchmark|server"
+      port: 3000  # only for server type
+      default_params:
+        param_name: "default_value"
+```
+
+### 2. Naming Conventions
+
+#### Technology Keys
+- Use lowercase, descriptive names: `go`, `node`, `python`, `rust`, `java`
+- Avoid abbreviations unless widely recognized: `node` not `nodejs`, `python` not `py`
+- Use hyphens for multi-word technologies: `dotnet`, `webassembly`
+
+#### Technology Names
+- Use full, descriptive names: "Go", "Node.js", "Python", "Rust", "Java"
+- Include version info if relevant: "Python 3.x", "Node.js 18+"
+- Be specific about variants: "Bun (JavaScript Runtime)", "Deno (TypeScript Runtime)"
+
+#### Benchmark Names
+- Use descriptive, action-oriented names: `file_read`, `file_write`, `json_serialize`
+- Use snake_case for consistency
+- Be specific about what is being tested: `http_server`, `concurrency_test`
+
+### 3. Required Benchmark Types
+Every technology should support these core benchmarks:
+- `file_read` - File reading performance
+- `file_write` - File writing performance  
+- `json_write` - JSON serialization and writing
+- `concurrency_test` - Single vs multi-threaded performance
+- `http_server` - HTTP server performance (if applicable)
+
+### 4. Command Structure
+- Use absolute paths or relative paths from project root
+- Include all necessary arguments in the command array
+- Ensure commands work cross-platform when possible
+- Test commands manually before adding to configuration
+
+### 5. Parameter Standards
+Use consistent parameter names across all technologies:
+- `file` - Input file path for read operations
+- `output` - Output file path for write operations
+- `iterations` - Number of test iterations
+- `size` - Data size in bytes
+- `mode` - Test mode (single/multi for concurrency tests)
+
+### 6. Implementation Requirements
+- Create benchmark directory: `benchmarks/{technology_key}/{benchmark_name}/`
+- Implement standardized JSON output to stdout
+- Handle command-line arguments consistently
+- Include proper error handling and exit codes
+- Follow the pattern established in existing benchmarks
+
+### 7. Testing Checklist
+Before adding a new technology:
+- [ ] All benchmark scripts exist and are executable
+- [ ] Commands work on target platforms
+- [ ] JSON output format is consistent
+- [ ] Error handling is implemented
+- [ ] Version command returns valid output
+- [ ] Configuration is added to technologies.yaml
+- [ ] Documentation is updated
+
+### 8. Example Implementation
+See existing implementations in:
+- [benchmarks/go/](mdc:benchmarks/go/) for Go examples
+- [benchmarks/node/](mdc:benchmarks/node/) for Node.js examples
+- [benchmarks/bun/](mdc:benchmarks/bun/) for Bun examples
+description:
+globs:
+alwaysApply: false
+---

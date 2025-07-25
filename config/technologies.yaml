@@ -1,0 +1,156 @@
+technologies:
+  go:
+    name: "Go"
+    version_command: ["go", "version"]
+    benchmarks:
+      http_server:
+        command: ["go", "run", "benchmarks/go/http_server/main.go"]
+        type: "server"
+        port: 3000
+      file_read:
+        command: ["go", "run", "benchmarks/go/file_read/main.go"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/medium.txt"
+          iterations: "1000"
+      file_write:
+        command: ["go", "run", "benchmarks/go/file_write/main.go"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.txt"
+          iterations: "1000"
+          size: "1024"
+      json_write:
+        command: ["go", "run", "benchmarks/go/json_write/main.go"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.json"
+          iterations: "1000"
+          size: "100"
+      concurrency_test:
+        command: ["go", "run", "benchmarks/go/concurrency_test/main.go"]
+        type: "benchmark"
+        default_params:
+          mode: "single"
+          workload: "1000000"
+
+  bun:
+    name: "Bun"
+    version_command: ["bun", "--version"]
+    benchmarks:
+      http_server:
+        command: ["bun", "run", "benchmarks/bun/http_server/index.ts"]
+        type: "server"
+        port: 3000
+      file_read:
+        command: ["bun", "run", "benchmarks/bun/file_read/index.ts"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/medium.txt"
+          iterations: "1000"
+      file_write:
+        command: ["bun", "run", "benchmarks/bun/file_write/index.ts"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.txt"
+          iterations: "1000"
+          size: "1024"
+      json_write:
+        command: ["bun", "run", "benchmarks/bun/json_write/index.ts"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.json"
+          iterations: "1000"
+          size: "100"
+      concurrency_test:
+        command: ["bun", "run", "benchmarks/bun/concurrency_test/index.ts"]
+        type: "benchmark"
+        default_params:
+          mode: "single"
+          workload: "1000000"
+
+  node:
+    name: "Node.js"
+    version_command: ["node", "--version"]
+    benchmarks:
+      http_server:
+        command: ["node", "benchmarks/node/http_server/index.js"]
+        type: "server"
+        port: 3000
+      file_read:
+        command: ["node", "benchmarks/node/file_read/index.js"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/medium.txt"
+          iterations: "1000"
+      file_write:
+        command: ["node", "benchmarks/node/file_write/index.js"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.txt"
+          iterations: "1000"
+          size: "1024"
+      json_write:
+        command: ["node", "benchmarks/node/json_write/index.js"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.json"
+          iterations: "1000"
+          size: "100"
+      concurrency_test:
+        command: ["node", "benchmarks/node/concurrency_test/index.js"]
+        type: "benchmark"
+        default_params:
+          mode: "single"
+          workload: "1000000"
+
+# Example of how to add a new technology:
+# python:
+#   name: "Python"
+#   version_command: ["python", "--version"]
+#   benchmarks:
+#     http_server:
+#       command: ["python", "benchmarks/python/http_server/main.py"]
+#       type: "server"
+#       port: 3000
+#     file_read:
+#       command: ["python", "benchmarks/python/file_read/main.py"]
+#       type: "benchmark"
+#       default_params:
+#         file: "test_data/medium.txt"
+#         iterations: "1000"
+#     file_write:
+#       command: ["python", "benchmarks/python/file_write/main.py"]
+#       type: "benchmark"
+#       default_params:
+#         output: "test_data/temp_output.txt"
+#         iterations: "1000"
+#         size: "1024"
+#     json_write:
+#       command: ["python", "benchmarks/python/json_write/main.py"]
+#       type: "benchmark"
+#       default_params:
+#         output: "test_data/temp_output.json"
+#         iterations: "1000"
+#         size: "100"
+#     concurrency_test:
+#       command: ["python", "benchmarks/python/concurrency_test/main.py"]
+#       type: "benchmark"
+#       default_params:
+#         mode: "single"
+#         workload: "1000000"
+
+# rust:
+#   name: "Rust"
+#   version_command: ["rustc", "--version"]
+#   benchmarks:
+#     http_server:
+#       command: ["cargo", "run", "--release", "--bin", "http_server"]
+#       type: "server"
+#       port: 3000
+#     file_read:
+#       command: ["cargo", "run", "--release", "--bin", "file_read"]
+#       type: "benchmark"
+#       default_params:
+#         file: "test_data/medium.txt"
+#         iterations: "1000" 

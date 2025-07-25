@@ -14,19 +14,18 @@ async function run() {
   const startTime = process.hrtime.bigint();
 
   if (MODE === 'single') {
-    // Single-threaded execution
+    // Single-threaded execution - simple hash computation
+    let acc = 0;
     for (let i = 0; i < WORKLOAD; i++) {
       const data = `data_${i}`;
-      // Bun.hash returns a number or bigint; ensure we accumulate as a number
-      let acc = 0;
-      for (let i = 0; i < WORKLOAD; i++) {
-        const data = `data_${i}`;
-        const hash = Bun.hash(data);
-        // Convert hash to number if it's a bigint
-        acc ^= typeof hash === "bigint" ? Number(hash) : hash;
-      }
-      // Use acc so it is not optimized away
-      if (Number.isNaN(acc)) process.exit(1);
+      const hash = Bun.hash(data);
+      // Convert hash to number if it's a bigint
+      acc ^= typeof hash === "bigint" ? Number(hash) : hash;
+    }
+    // Use acc so it is not optimized away
+    if (Number.isNaN(acc)) process.exit(1);
+  } else if (MODE === 'multi') {
+    // Multi-threaded execution using Web Workers
     const numCPU = navigator.hardwareConcurrency || 4;
     const workPerCPU = Math.floor(WORKLOAD / numCPU);
     

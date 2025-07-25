@@ -1,0 +1,86 @@
+---
+alwaysApply: true
+description: Framework benchmark inclusion criteria - when to create framework-specific tests vs using runtime tests
+---
+
+# Framework Benchmark Inclusion Criteria
+
+When creating framework-specific benchmark implementations (e.g., `hono-bun`, `hono-node`, `express-node`), **only include benchmark types that actually exercise framework features**. Framework benchmarks should measure framework overhead and benefits, not duplicate runtime capabilities.
+
+## ✅ INCLUDE for Framework Benchmarks
+
+Create framework-specific implementations for these test types:
+
+- **HTTP Servers** - Routing, middleware, request/response handling
+- **Database ORMs** - If framework provides database abstractions
+- **Template Rendering** - If framework provides templating engines
+- **WebSocket Handling** - If framework provides WebSocket utilities
+- **Authentication/Authorization** - Framework-specific auth middleware
+- **Session Management** - Framework session handling
+- **File Upload/Multipart** - Framework upload handling utilities
+
+## ❌ EXCLUDE from Framework Benchmarks
+
+Do NOT create framework-specific tests for these (use runtime tests instead):
+
+- **File Read/Write Operations** - Use runtime APIs directly (`fs`, `Bun.file()`)
+- **JSON Serialization** - Use language built-ins (`JSON.stringify()`)
+- **Raw Concurrency Tests** - Test runtime concurrency, not framework
+- **Basic I/O Operations** - Network requests, file system access
+- **Crypto Operations** - Unless framework provides crypto utilities
+- **String/Array Processing** - Use language primitives
+
+## 🎯 Validation Rule
+
+**Before creating a framework benchmark, ask:**
+> *"Does this test import and meaningfully use the framework?"*
+
+If the answer is NO, use the runtime benchmark instead.
+
+## Examples
+
+### ✅ Good Framework Test (Hono HTTP Server)
+```typescript
+import { Hono } from 'hono';  // ← Uses framework
+const app = new Hono();      // ← Framework feature
+app.get('/', (c) => c.json({...}));  // ← Framework routing
+```
+
+### ❌ Bad Framework Test (Hono File Read)
+```typescript
+// No framework imports or usage!
+await Bun.file(filePath).text();  // ← Pure runtime API
+```
+
+## Technology Examples
+
+### Hono Framework
+- ✅ Include: `http_server` (uses Hono routing/middleware)
+- ❌ Exclude: `file_read`, `file_write`, `json_write`, `concurrency_test`
+
+### Express Framework  
+- ✅ Include: `http_server`, `middleware_stack`, `template_render`
+- ❌ Exclude: `file_operations`, `json_processing`, `crypto_ops`
+
+## Configuration Reference
+
+Framework technologies should only define benchmarks that exercise framework features in [config/technologies.yaml](mdc:config/technologies.yaml):
+
+```yaml
+hono-bun:
+  name: "Hono (Bun Runtime)"
+  benchmarks:
+    http_server:  # ✅ Uses Hono routing
+      command: ["bun", "run", "benchmarks/hono-bun/http_server/index.ts"]
+    # ❌ No file_read, json_write, etc. - use 'bun' technology instead
+```
+
+## Rationale
+
+This approach:
+- **Eliminates Duplication** - No duplicate tests that measure the same runtime capabilities
+- **Meaningful Comparisons** - Framework vs framework overhead comparisons
+- **Clear Separation** - Runtime performance vs framework performance
+- **Maintenance** - Fewer redundant test implementations to maintain
+
+**Remember**: If a test doesn't use the framework, it belongs in the runtime benchmark suite, not the framework suite.

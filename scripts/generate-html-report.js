@@ -124,10 +124,34 @@ class ModernHTMLReportGenerator {
 
     generateHTML(reports) {
         const latestReport = reports[0];
-        const aggregatedResults = this.aggregateAndCategorizeResults(latestReport.results);
-        const topPerformers = this.calculateTopPerformers(latestReport.results);
+        // Merge results from all reports instead of just using the latest one
+        const allResults = this.mergeAllReports(reports);
+        const aggregatedResults = this.aggregateAndCategorizeResults(allResults);
+        const topPerformers = this.calculateTopPerformers(allResults);
         
         return this.htmlTemplate(latestReport, aggregatedResults, topPerformers);
+    }
+
+    // ===== NEW METHOD: Merge results from all reports =====
+    mergeAllReports(reports) {
+        const allResults = [];
+        
+        reports.forEach(report => {
+            if (report.results && Array.isArray(report.results)) {
+                allResults.push(...report.results);
+            }
+        });
+        
+        // Remove duplicates based on tech+test combination (keep the latest)
+        const resultMap = new Map();
+        allResults.forEach(result => {
+            const key = `${result.tech}-${result.test}`;
+            if (!resultMap.has(key) || new Date(result.timestamp || 0) > new Date(resultMap.get(key).timestamp || 0)) {
+                resultMap.set(key, result);
+            }
+        });
+        
+        return Array.from(resultMap.values());
     }
 
     // ===== HTML TEMPLATES (Separation of Concerns) =====

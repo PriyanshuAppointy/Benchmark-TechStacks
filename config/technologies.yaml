@@ -104,6 +104,76 @@ technologies:
           mode: "single"
           workload: "1000000"
 
+  hono-bun:
+    name: "Hono.js on Bun"
+    version_command: ["bun", "--version"]
+    benchmarks:
+      http_server:
+        command: ["bun", "run", "benchmarks/hono-bun/http_server/index.ts"]
+        type: "server"
+        port: 3000
+      file_read:
+        command: ["bun", "run", "benchmarks/hono-bun/file_read/index.ts"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/medium.txt"
+          iterations: "1000"
+      file_write:
+        command: ["bun", "run", "benchmarks/hono-bun/file_write/index.ts"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.txt"
+          iterations: "1000"
+          size: "1024"
+      json_write:
+        command: ["bun", "run", "benchmarks/hono-bun/json_write/index.ts"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.json"
+          iterations: "1000"
+          size: "100"
+      concurrency_test:
+        command: ["bun", "run", "benchmarks/hono-bun/concurrency_test/index.ts"]
+        type: "benchmark"
+        default_params:
+          mode: "single"
+          workload: "1000000"
+
+  hono-node:
+    name: "Hono.js on Node.js"
+    version_command: ["node", "--version"]
+    benchmarks:
+      http_server:
+        command: ["node", "benchmarks/hono-node/http_server/index.js"]
+        type: "server"
+        port: 3000
+      file_read:
+        command: ["node", "benchmarks/hono-node/file_read/index.js"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/medium.txt"
+          iterations: "1000"
+      file_write:
+        command: ["node", "benchmarks/hono-node/file_write/index.js"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.txt"
+          iterations: "1000"
+          size: "1024"
+      json_write:
+        command: ["node", "benchmarks/hono-node/json_write/index.js"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output.json"
+          iterations: "1000"
+          size: "100"
+      concurrency_test:
+        command: ["node", "benchmarks/hono-node/concurrency_test/index.js"]
+        type: "benchmark"
+        default_params:
+          mode: "single"
+          workload: "1000000"
+
 # Example of how to add a new technology:
 # python:
 #   name: "Python"

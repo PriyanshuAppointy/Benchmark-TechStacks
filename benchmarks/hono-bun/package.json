@@ -1,0 +1,10 @@
+{
+  "name": "hono-bun-benchmarks",
+  "version": "1.0.0",
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.19"
+  }
+} 

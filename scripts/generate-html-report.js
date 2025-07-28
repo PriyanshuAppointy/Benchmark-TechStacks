@@ -47,13 +47,14 @@ const REPORT_CONFIG = {
     'http_server': {
         category: 'Network Performance',
         title: 'HTTP Server Load Test',
-        primaryMetric: 'avgCpuPercent',
-        metricUnit: '%',
-        sortOrder: 'asc',
-        description: 'Evaluates resource efficiency under HTTP load. Tests how well each runtime handles concurrent connections while managing CPU and memory usage.',
-        betterWhen: 'lower',
-        hasNoOpsMetric: true,
-        calculation: 'Data: HTTP server handles 100 concurrent connections for 15 seconds • Calculation: Monitor peak memory usage (MB) and average CPU utilization (%)'
+        primaryMetric: 'requestsPerSecond',
+        metricUnit: 'req/sec',
+        sortOrder: 'desc',
+        description: 'Evaluates HTTP server performance under load. Tests throughput, latency, and resource efficiency with concurrent connections.',
+        betterWhen: 'higher',
+        hasNoOpsMetric: false,
+        isHttpServer: true,
+        calculation: 'Data: HTTP server handles 100 concurrent connections for 15 seconds • Calculation: Total requests ÷ Total time (requests/sec) and average latency (ms)'
     }
 };
 
@@ -356,7 +357,7 @@ ${this.headTemplate()}
         
         const chartId = `chart-${testType}`;
         
-        return `<div class="test-card">
+        return `<div class="test-card" data-test-type="${testType}">
     <div class="test-header">
         <h3 class="test-title">${config.title}</h3>
         <p class="test-description">${config.description}</p>
@@ -370,8 +371,10 @@ ${this.headTemplate()}
     <div class="results-table">
         <div class="table-header">
             <div class="table-cell">Technology</div>
-            ${!config.hasNoOpsMetric ? '<div class="table-cell">Ops/Second</div>' : ''}
-            <div class="table-cell">Time (ms)</div>
+            ${config.isHttpServer ? '<div class="table-cell">Requests/Second</div>' : 
+              !config.hasNoOpsMetric ? '<div class="table-cell">Ops/Second</div>' : ''}
+            ${config.isHttpServer ? '<div class="table-cell">Avg Latency (ms)</div>' : 
+              '<div class="table-cell">Time (ms)</div>'}
             <div class="table-cell">Memory (MB)</div>
             <div class="table-cell">CPU (%)</div>
         </div>
@@ -381,8 +384,10 @@ ${this.headTemplate()}
                     <span class="tech-icon">${this.getTechIcon(result.tech)}</span>
                     <span class="tech-name">${result.tech}</span>
                 </div>
-                ${!config.hasNoOpsMetric ? `<div class="table-cell metric-cell">${(result.metrics.operationsPerSecond || 0).toLocaleString()}</div>` : ''}
-                <div class="table-cell metric-cell">${(result.metrics.totalTimeMs || 0).toFixed(2)}</div>
+                ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.requestsPerSecond || 0).toLocaleString()}</div>` : 
+                  !config.hasNoOpsMetric ? `<div class="table-cell metric-cell">${(result.metrics.operationsPerSecond || 0).toLocaleString()}</div>` : ''}
+                ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyAvgMs || 0).toFixed(2)}</div>` : 
+                  `<div class="table-cell metric-cell">${(result.metrics.totalTimeMs || 0).toFixed(2)}</div>`}
                 <div class="table-cell metric-cell">${(result.metrics.maxMemoryMB || 0).toFixed(1)}</div>
                 <div class="table-cell metric-cell">${(result.metrics.avgCpuPercent || 0).toFixed(1)}</div>
             </div>
@@ -906,6 +911,12 @@ ${this.headTemplate()}
             gap: var(--space-4);
             padding: var(--space-4) var(--space-6);
             align-items: center;
+        }
+
+        /* HTTP Server tests have 5 columns: Tech, Requests/sec, Latency, Memory, CPU */
+        .test-card[data-test-type="http_server"] .table-header,
+        .test-card[data-test-type="http_server"] .table-row {
+            grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr;
         }
 
         .table-header {

@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [workflow, master]
   schedule:
-    - cron: '0 0 1 * *' # monthly on 1st
+    - cron: '0 0 26 * *' # monthly
   workflow_dispatch:
     inputs:
       techs:
@@ -58,8 +58,18 @@ jobs:
           echo "selected-techs=$SELECTED_TECHS" >> $GITHUB_OUTPUT
           echo "Selected technologies: $SELECTED_TECHS"
 
-  benchmarks:
+  clean-reports:
     needs: discover-technologies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete all reports
+        run: rm -rf reports/*
+      - name: Save empty reports dir
+        run: mkdir -p reports
+
+  benchmarks:
+    needs: [discover-technologies, clean-reports]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -143,3 +153,18 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: reports/
+
+  deploy-to-pages:
+    needs: generate-html-report
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && (needs.generate-html-report.result == 'success')
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

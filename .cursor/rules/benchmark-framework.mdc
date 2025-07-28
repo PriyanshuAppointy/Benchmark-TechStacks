@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Performance Benchmark Suite
 
 This is a configuration-driven benchmarking framework for comparing performance across different technologies (Go, Bun, Node.js) and various test types.
@@ -73,7 +77,78 @@ All benchmark scripts must:
 ├── reports/                     # Generated reports
 └── scripts/                     # Utility scripts
 ```
-description:
-globs:
-alwaysApply: false
----
+# Performance Benchmark Suite
+
+This is a configuration-driven benchmarking framework for comparing performance across different technologies (Go, Bun, Node.js) and various test types.
+
+## Key Architecture
+
+- **Configuration-Driven**: All technologies and benchmarks are defined in [config/technologies.yaml](mdc:config/technologies.yaml)
+- **Orchestrator**: Go CLI tool in [orchestrator/](mdc:orchestrator/) that manages test execution and monitoring
+- **Benchmarks**: Technology-specific implementations in [benchmarks/](mdc:benchmarks/)
+- **Test Data**: Automatically generated files in [test_data/](mdc:test_data/)
+
+## Adding New Technologies
+
+1. Create benchmark implementations in `benchmarks/{tech}/`
+2. Add configuration to [config/technologies.yaml](mdc:config/technologies.yaml)
+3. No code changes needed in the orchestrator!
+
+Example configuration:
+```yaml
+python:
+  name: "Python"
+  version_command: ["python", "--version"]
+  benchmarks:
+    file_read:
+      command: ["python", "benchmarks/python/file_read/main.py"]
+      type: "benchmark"
+      default_params:
+        file: "test_data/medium.txt"
+        iterations: "1000"
+```
+
+## Benchmark Standards
+
+All benchmark scripts must:
+- Accept parameters via command-line arguments (--param=value)
+- Output JSON results to stdout on completion
+- Output errors to stderr
+- Follow the standardized JSON output format
+
+## Key Files
+
+- [orchestrator/main.go](mdc:orchestrator/main.go) - CLI entry point
+- [orchestrator/config/config.go](mdc:orchestrator/config/config.go) - Configuration management
+- [orchestrator/runner/process.go](mdc:orchestrator/runner/process.go) - Benchmark execution
+- [orchestrator/report/generator.go](mdc:orchestrator/report/generator.go) - Report generation
+- [scripts/generate_test_data.js](mdc:scripts/generate_test_data.js) - Test data generation
+- [scripts/setup.sh](mdc:scripts/setup.sh) - Environment setup
+
+## Running Benchmarks
+
+```bash
+# Setup
+./scripts/setup.sh
+
+# Run all benchmarks
+./orchestrator/benchmark-cli run --tech=all --test=all
+
+# Run specific technologies/tests
+./orchestrator/benchmark-cli run --tech=go,node --test=file_read,json_write
+```
+
+## Project Structure
+
+```
+/performance-benchmark-suite
+├── orchestrator/                 # Go CLI Tool
+│   ├── config/                  # Configuration management
+│   ├── runner/                  # Benchmark execution logic
+│   └── report/                  # Report generation
+├── benchmarks/                   # Technology-specific implementations
+├── config/                       # Technology configuration
+├── test_data/                   # Shared test data
+├── reports/                     # Generated reports
+└── scripts/                     # Utility scripts
+```

@@ -33,6 +33,13 @@ technologies:
         default_params:
           mode: "single"
           workload: "1000000"
+      cold_start:
+        command: ["go", "run", "benchmarks/go/cold_start/main.go"]
+        type: "benchmark"
+        default_params:
+          port: "3000"
+          iterations: "10"
+          timeout: "5000"
 
   bun:
     name: "Bun"
@@ -68,6 +75,13 @@ technologies:
         default_params:
           mode: "single"
           workload: "1000000"
+      cold_start:
+        command: ["bun", "run", "benchmarks/bun/cold_start/index.ts"]
+        type: "benchmark"
+        default_params:
+          port: "3000"
+          iterations: "10"
+          timeout: "5000"
 
   node:
     name: "Node.js"
@@ -103,6 +117,13 @@ technologies:
         default_params:
           mode: "single"
           workload: "1000000"
+      cold_start:
+        command: ["node", "benchmarks/node/cold_start/index.js"]
+        type: "benchmark"
+        default_params:
+          port: "3000"
+          iterations: "10"
+          timeout: "5000"
 
   hono-bun:
     name: "Hono.js on Bun"

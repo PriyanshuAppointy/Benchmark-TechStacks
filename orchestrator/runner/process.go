@@ -198,6 +198,7 @@ func (r *Runner) runServerBenchmark(tech, test string, params map[string]string)
 		"-t", strconv.Itoa(runtime.NumCPU()),
 		"-c", connections,
 		"-d", duration,
+		"--latency",
 		"http://localhost:3000")
 
 	wrkCmd.Dir = r.projectRoot
@@ -337,19 +338,23 @@ func (r *Runner) runRegularBenchmark(tech, test string, params map[string]string
 }
 
 func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, output string) (*report.BenchmarkResult, error) {
-	// Parse wrk output to extract RPS and latency
+	// Parse wrk output to extract RPS, latency average, and percentiles
 	lines := strings.Split(output, "\n")
 	var requestsPerSecond float64
 	var latencyMs float64
+	var latencyP50Ms, latencyP75Ms, latencyP90Ms, latencyP95Ms, latencyP99Ms float64
 
 	fmt.Printf("Parsing wrk output for %s:\n", tech)
-	
+
+	inLatencyDistribution := false
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		
+
+		// Parse requests per second
 		if strings.Contains(line, "Requests/sec:") {
 			fmt.Printf("Found RPS line: %s\n", line)
 			parts := strings.Fields(line)
@@ -362,22 +367,84 @@ func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, out
 				}
 			}
 		}
-		if strings.Contains(line, "Latency") && strings.Contains(line, "ms") && !strings.Contains(line, "Transfer") {
+
+		// Parse average latency from Thread Stats section
+		if strings.Contains(line, "Latency") && strings.Contains(line, "us") && !strings.Contains(line, "Distribution") && !inLatencyDistribution {
 			fmt.Printf("Found Latency line: %s\n", line)
 			parts := strings.Fields(line)
 			if len(parts) >= 2 {
-				latencyStr := strings.TrimSuffix(parts[1], "ms")
+				latencyStr := strings.TrimSuffix(parts[1], "us")
 				if lat, err := strconv.ParseFloat(latencyStr, 64); err == nil {
-					latencyMs = lat
-					fmt.Printf("Parsed Latency: %f ms\n", lat)
+					latencyMs = lat / 1000.0 // Convert microseconds to milliseconds
+					fmt.Printf("Parsed Average Latency: %f ms\n", latencyMs)
 				} else {
-					fmt.Printf("Failed to parse latency from: %s, error: %v\n", latencyStr, err)
+					fmt.Printf("Failed to parse average latency from: %s, error: %v\n", latencyStr, err)
 				}
+			}
+		}
+
+		// Detect start of Latency Distribution section
+		if strings.Contains(line, "Latency Distribution") {
+			inLatencyDistribution = true
+			fmt.Printf("Found Latency Distribution section\n")
+			continue
+		}
+
+		// Parse percentile latencies
+		if inLatencyDistribution {
+			// Look for lines like "     50%   31.00us" or "     99%  708.00us"
+			if strings.Contains(line, "%") && (strings.Contains(line, "us") || strings.Contains(line, "ms")) {
+				fmt.Printf("Parsing percentile line: %s\n", line)
+				parts := strings.Fields(line)
+				if len(parts) >= 2 {
+					percentileStr := strings.TrimSuffix(parts[0], "%")
+					valueStr := parts[1]
+
+					var latencyValue float64
+					var err error
+
+					// Handle both microseconds and milliseconds
+					if strings.HasSuffix(valueStr, "us") {
+						valueStr = strings.TrimSuffix(valueStr, "us")
+						if latencyValue, err = strconv.ParseFloat(valueStr, 64); err == nil {
+							latencyValue = latencyValue / 1000.0 // Convert to milliseconds
+						}
+					} else if strings.HasSuffix(valueStr, "ms") {
+						valueStr = strings.TrimSuffix(valueStr, "ms")
+						latencyValue, err = strconv.ParseFloat(valueStr, 64)
+					}
+
+					if err == nil {
+						switch percentileStr {
+						case "50":
+							latencyP50Ms = latencyValue
+							fmt.Printf("Parsed P50 Latency: %f ms\n", latencyValue)
+						case "75":
+							latencyP75Ms = latencyValue
+							fmt.Printf("Parsed P75 Latency: %f ms\n", latencyValue)
+						case "90":
+							latencyP90Ms = latencyValue
+							fmt.Printf("Parsed P90 Latency: %f ms\n", latencyValue)
+						case "95":
+							latencyP95Ms = latencyValue
+							fmt.Printf("Parsed P95 Latency: %f ms\n", latencyValue)
+						case "99":
+							latencyP99Ms = latencyValue
+							fmt.Printf("Parsed P99 Latency: %f ms\n", latencyValue)
+						}
+					} else {
+						fmt.Printf("Failed to parse percentile value: %s, error: %v\n", valueStr, err)
+					}
+				}
+			} else if !strings.HasPrefix(line, " ") {
+				// End of latency distribution section
+				inLatencyDistribution = false
 			}
 		}
 	}
 
-	fmt.Printf("Final parsed metrics - RPS: %f, Latency: %f ms\n", requestsPerSecond, latencyMs)
+	fmt.Printf("Final parsed metrics - RPS: %f, Avg Latency: %f ms, P50: %f ms, P75: %f ms, P90: %f ms, P95: %f ms, P99: %f ms\n",
+		requestsPerSecond, latencyMs, latencyP50Ms, latencyP75Ms, latencyP90Ms, latencyP95Ms, latencyP99Ms)
 
 	return &report.BenchmarkResult{
 		Tech:       tech,
@@ -386,6 +453,11 @@ func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, out
 		Metrics: report.Metrics{
 			RequestsPerSecond: requestsPerSecond,
 			LatencyAvgMs:      latencyMs,
+			LatencyP50Ms:      latencyP50Ms,
+			LatencyP75Ms:      latencyP75Ms,
+			LatencyP90Ms:      latencyP90Ms,
+			LatencyP95Ms:      latencyP95Ms,
+			LatencyP99Ms:      latencyP99Ms,
 		},
 	}, nil
 }

@@ -55,6 +55,17 @@ const REPORT_CONFIG = {
         hasNoOpsMetric: false,
         isHttpServer: true,
         calculation: 'Data: HTTP server handles 100 concurrent connections for 15 seconds • Calculation: Total requests ÷ Total time (requests/sec) and average latency (ms)'
+    },
+    'cold_start': {
+        category: 'System Performance',
+        title: 'Cold Start Time',
+        primaryMetric: 'coldStartTimeMs',
+        metricUnit: 'ms',
+        sortOrder: 'asc',
+        description: 'Measures the time from process start to first successful HTTP response. Critical for serverless and microservice performance.',
+        betterWhen: 'lower',
+        hasNoOpsMetric: true,
+        calculation: 'Data: Start HTTP server and measure time until first successful response • Calculation: Average cold start time across multiple iterations'
     }
 };
 
@@ -375,6 +386,8 @@ ${this.headTemplate()}
               !config.hasNoOpsMetric ? '<div class="table-cell">Ops/Second</div>' : ''}
             ${config.isHttpServer ? '<div class="table-cell">Avg Latency (ms)</div>' : 
               '<div class="table-cell">Time (ms)</div>'}
+            ${config.isHttpServer ? '<div class="table-cell">P95 Latency (ms)</div>' : ''}
+            ${config.isHttpServer ? '<div class="table-cell">P99 Latency (ms)</div>' : ''}
             <div class="table-cell">Memory (MB)</div>
             <div class="table-cell">CPU (%)</div>
         </div>
@@ -386,8 +399,10 @@ ${this.headTemplate()}
                 </div>
                 ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.requestsPerSecond || 0).toLocaleString()}</div>` : 
                   !config.hasNoOpsMetric ? `<div class="table-cell metric-cell">${(result.metrics.operationsPerSecond || 0).toLocaleString()}</div>` : ''}
-                ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyAvgMs || 0).toFixed(2)}</div>` : 
+                ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyAvgMs || 0).toFixed(3)}</div>` : 
                   `<div class="table-cell metric-cell">${(result.metrics.totalTimeMs || 0).toFixed(2)}</div>`}
+                ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyP95Ms || 0).toFixed(3)}</div>` : ''}
+                ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyP99Ms || 0).toFixed(3)}</div>` : ''}
                 <div class="table-cell metric-cell">${(result.metrics.maxMemoryMB || 0).toFixed(1)}</div>
                 <div class="table-cell metric-cell">${(result.metrics.avgCpuPercent || 0).toFixed(1)}</div>
             </div>
@@ -913,10 +928,10 @@ ${this.headTemplate()}
             align-items: center;
         }
 
-        /* HTTP Server tests have 5 columns: Tech, Requests/sec, Latency, Memory, CPU */
+        /* HTTP Server tests have 7 columns: Tech, Requests/sec, Avg Latency, P95, P99, Memory, CPU */
         .test-card[data-test-type="http_server"] .table-header,
         .test-card[data-test-type="http_server"] .table-row {
-            grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr;
+            grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1fr 1fr;
         }
 
         .table-header {
@@ -1115,6 +1130,17 @@ ${this.headTemplate()}
             .table-row {
                 grid-template-columns: 1fr;
                 gap: var(--space-2);
+            }
+            
+            /* HTTP server tables need horizontal scroll on mobile */
+            .test-card[data-test-type="http_server"] .results-table {
+                overflow-x: auto;
+            }
+            
+            .test-card[data-test-type="http_server"] .table-header,
+            .test-card[data-test-type="http_server"] .table-row {
+                grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1fr 1fr;
+                min-width: 800px;
             }
 
             .table-cell {

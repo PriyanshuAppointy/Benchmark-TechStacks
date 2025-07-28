@@ -57,15 +57,40 @@ const REPORT_CONFIG = {
         calculation: 'Data: HTTP server handles 100 concurrent connections for 15 seconds • Calculation: Total requests ÷ Total time (requests/sec) and average latency (ms)'
     },
     'cold_start': {
-        category: 'System Performance',
-        title: 'Cold Start Time',
+        category: 'Bootstrap Performance',
+        title: 'Cold Start Time Test',
         primaryMetric: 'coldStartTimeMs',
         metricUnit: 'ms',
         sortOrder: 'asc',
-        description: 'Measures the time from process start to first successful HTTP response. Critical for serverless and microservice performance.',
+        description: 'Measures the time from process start to first successful HTTP response. Critical for serverless and auto-scaling scenarios.',
         betterWhen: 'lower',
-        hasNoOpsMetric: true,
-        calculation: 'Data: Start HTTP server and measure time until first successful response • Calculation: Average cold start time across multiple iterations'
+        hasNoOpsMetric: false,
+        isHttpServer: false,
+        calculation: 'Data: Cold start measurement by spawning server processes and measuring time to first successful response • Calculation: Average cold start time across multiple iterations (ms)'
+    },
+    'concurrency_limit': {
+        category: 'Scalability Performance',
+        title: 'Concurrency Limit Test',
+        primaryMetric: 'maxConcurrentClients',
+        metricUnit: 'clients',
+        sortOrder: 'desc',
+        description: 'Finds the maximum number of concurrent connections each runtime can handle before performance degrades. Tests scalability under increasing load.',
+        betterWhen: 'higher',
+        hasNoOpsMetric: false,
+        isHttpServer: false,
+        calculation: 'Data: Gradually increase concurrent clients until RPS drops below 90% of peak • Calculation: Maximum concurrent clients before performance threshold breach'
+    },
+    'concurrency_test': {
+        category: 'Computational Performance',
+        title: 'Concurrency Processing Test',
+        primaryMetric: 'operationsPerSecond',
+        metricUnit: 'ops/sec',
+        sortOrder: 'desc',
+        description: 'Evaluates computational throughput under concurrent processing scenarios. Tests how efficiently each runtime handles parallel workloads.',
+        betterWhen: 'higher',
+        hasNoOpsMetric: false,
+        isHttpServer: false,
+        calculation: 'Data: Process 1,000,000 operations across multiple concurrent threads/workers • Calculation: Total operations ÷ Total time (operations per second)'
     }
 };
 

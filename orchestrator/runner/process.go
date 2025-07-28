@@ -520,3 +520,53 @@ func (r *Runner) monitorProcess(ctx context.Context, proc *process.Process, metr
 		}
 	}
 }
+
+// measureBuildTime measures the time to build/compile for compiled languages
+func (r *Runner) measureBuildTime(tech string, testName string) (float64, error) {
+	// Only measure build time for compiled languages
+	if tech != "go" {
+		return 0, nil // No build time for interpreted languages
+	}
+
+	// For Go, measure "go build" time
+	if tech == "go" {
+		// Find the benchmark directory
+		benchmark, err := r.config.GetBenchmark(tech, testName)
+		if err != nil {
+			return 0, err
+		}
+
+		// Extract directory from command - e.g., ["go", "run", "benchmarks/go/file_read/main.go"]
+		if len(benchmark.Command) < 3 {
+			return 0, fmt.Errorf("invalid go command structure")
+		}
+
+		mainFile := benchmark.Command[2]   // "benchmarks/go/file_read/main.go"
+		buildDir := filepath.Dir(mainFile) // "benchmarks/go/file_read"
+		buildPath := filepath.Join(r.projectRoot, buildDir)
+
+		// Change to build directory
+		originalDir, _ := os.Getwd()
+		if err := os.Chdir(buildPath); err != nil {
+			return 0, err
+		}
+		defer os.Chdir(originalDir)
+
+		// Measure build time
+		startTime := time.Now()
+		cmd := exec.Command("go", "build", "-o", "benchmark_temp", ".")
+		err = cmd.Run()
+		buildTime := time.Since(startTime)
+
+		// Clean up temporary binary
+		os.Remove("benchmark_temp")
+
+		if err != nil {
+			return 0, fmt.Errorf("go build failed: %v", err)
+		}
+
+		return float64(buildTime.Nanoseconds()) / 1e6, nil // Convert to milliseconds
+	}
+
+	return 0, nil
+}

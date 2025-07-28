@@ -40,6 +40,16 @@ technologies:
           port: "3000"
           iterations: "10"
           timeout: "5000"
+      concurrency_limit:
+        command: ["go", "run", "benchmarks/go/concurrency_limit/main.go"]
+        type: "benchmark"
+        default_params:
+          port: "3000"
+          start-clients: "10"
+          max-clients: "300"
+          step-size: "25"
+          duration: "8"
+          threshold: "0.9"
 
   bun:
     name: "Bun"
@@ -82,6 +92,16 @@ technologies:
           port: "3000"
           iterations: "10"
           timeout: "5000"
+      concurrency_limit:
+        command: ["bun", "run", "benchmarks/bun/concurrency_limit/index.ts"]
+        type: "benchmark"
+        default_params:
+          port: "3000"
+          start-clients: "10"
+          max-clients: "300"
+          step-size: "25"
+          duration: "8"
+          threshold: "0.9"
 
   node:
     name: "Node.js"
@@ -124,6 +144,16 @@ technologies:
           port: "3000"
           iterations: "10"
           timeout: "5000"
+      concurrency_limit:
+        command: ["node", "benchmarks/node/concurrency_limit/index.js"]
+        type: "benchmark"
+        default_params:
+          port: "3000"
+          start-clients: "10"
+          max-clients: "300"
+          step-size: "25"
+          duration: "8"
+          threshold: "0.9"
 
   hono-bun:
     name: "Hono.js on Bun"

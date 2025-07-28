@@ -47,20 +47,22 @@ type BenchmarkResult struct {
 }
 
 type Metrics struct {
-	OperationsPerSecond float64 `json:"operationsPerSecond,omitempty"`
-	TotalTimeMs         float64 `json:"totalTimeMs,omitempty"`
-	RequestsPerSecond   float64 `json:"requestsPerSecond,omitempty"`
-	LatencyAvgMs        float64 `json:"latencyAvgMs,omitempty"`
-	LatencyP50Ms        float64 `json:"latencyP50Ms,omitempty"`
-	LatencyP75Ms        float64 `json:"latencyP75Ms,omitempty"`
-	LatencyP90Ms        float64 `json:"latencyP90Ms,omitempty"`
-	LatencyP95Ms        float64 `json:"latencyP95Ms,omitempty"`
-	LatencyP99Ms        float64 `json:"latencyP99Ms,omitempty"`
-	ColdStartTimeMs     float64 `json:"coldStartTimeMs,omitempty"`
-	ConcurrencyLimit    int     `json:"concurrencyLimit,omitempty"`
-	BuildTimeMs         float64 `json:"buildTimeMs,omitempty"`
-	MaxMemoryMB         float64 `json:"maxMemoryMB"`
-	AvgCPUPercent       float64 `json:"avgCpuPercent"`
+	OperationsPerSecond  float64 `json:"operationsPerSecond,omitempty"`
+	TotalTimeMs          float64 `json:"totalTimeMs,omitempty"`
+	RequestsPerSecond    float64 `json:"requestsPerSecond,omitempty"`
+	LatencyAvgMs         float64 `json:"latencyAvgMs,omitempty"`
+	LatencyP50Ms         float64 `json:"latencyP50Ms,omitempty"`
+	LatencyP75Ms         float64 `json:"latencyP75Ms,omitempty"`
+	LatencyP90Ms         float64 `json:"latencyP90Ms,omitempty"`
+	LatencyP95Ms         float64 `json:"latencyP95Ms,omitempty"`
+	LatencyP99Ms         float64 `json:"latencyP99Ms,omitempty"`
+	ColdStartTimeMs      float64 `json:"coldStartTimeMs,omitempty"`
+	MaxConcurrentClients int     `json:"maxConcurrentClients,omitempty"`
+	MaxRequestsPerSecond float64 `json:"maxRequestsPerSecond,omitempty"`
+	ConcurrencyThreshold float64 `json:"concurrencyThreshold,omitempty"`
+	BuildTimeMs          float64 `json:"buildTimeMs,omitempty"`
+	MaxMemoryMB          float64 `json:"maxMemoryMB"`
+	AvgCPUPercent        float64 `json:"avgCpuPercent"`
 }
 
 type Generator struct{}

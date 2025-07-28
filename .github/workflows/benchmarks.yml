@@ -101,6 +101,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wrk
+          which wrk
+          wrk --version
       - name: Build orchestrator
         run: |
           cd orchestrator && go build -o benchmark-cli

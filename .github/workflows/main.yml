@@ -107,6 +107,12 @@ jobs:
           cd orchestrator && go mod tidy
           cd ..
           node scripts/generate_test_data.js
+      - name: Install wrk
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wrk
+          which wrk
+          echo "wrk installed successfully"
       - name: Build orchestrator
         run: |
           cd orchestrator && go build -o benchmark-cli

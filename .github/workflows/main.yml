@@ -2,9 +2,9 @@ name: Run Benchmarks
 
 on:
   push:
-    branches: [workflow, master]
+    branches: [master]
   pull_request:
-    branches: [workflow, master]
+    branches: [master]
   schedule:
     - cron: '0 0 26 * *' # monthly
   workflow_dispatch:

@@ -124,6 +124,19 @@ func (r *Runner) runServerBenchmark(tech, test string, params map[string]string)
 		return nil, fmt.Errorf("failed to start %s server: %v", tech, err)
 	}
 
+	// Setup process monitoring for the server
+	proc, err := process.NewProcess(int32(serverCmd.Process.Pid))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server process: %v", err)
+	}
+
+	// Start monitoring in a goroutine
+	metricsChan := make(chan ProcessMetrics, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go r.monitorProcess(ctx, proc, metricsChan)
+
 	// Ensure server cleanup
 	defer func() {
 		if serverCmd.Process != nil {
@@ -199,8 +212,21 @@ func (r *Runner) runServerBenchmark(tech, test string, params map[string]string)
 	fmt.Printf("Load test completed for %s\n", tech)
 	fmt.Printf("wrk output:\n%s\n", string(wrkOutput))
 
-	// Parse wrk output to extract metrics
-	return r.parseWrkOutput(tech, test, params, string(wrkOutput))
+	// Stop monitoring and get final metrics
+	cancel()
+	processMetrics := <-metricsChan
+
+	// Parse wrk output to extract HTTP metrics
+	result, err := r.parseWrkOutput(tech, test, params, string(wrkOutput))
+	if err != nil {
+		return nil, err
+	}
+
+	// Combine wrk metrics with process metrics
+	result.Metrics.MaxMemoryMB = processMetrics.MaxMemoryMB
+	result.Metrics.AvgCPUPercent = processMetrics.AvgCPUPercent
+
+	return result, nil
 }
 
 func (r *Runner) runRegularBenchmark(tech, test string, params map[string]string) (*report.BenchmarkResult, error) {
@@ -316,26 +342,42 @@ func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, out
 	var requestsPerSecond float64
 	var latencyMs float64
 
+	fmt.Printf("Parsing wrk output for %s:\n", tech)
+	
 	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		
 		if strings.Contains(line, "Requests/sec:") {
+			fmt.Printf("Found RPS line: %s\n", line)
 			parts := strings.Fields(line)
 			if len(parts) >= 2 {
 				if rps, err := strconv.ParseFloat(parts[1], 64); err == nil {
 					requestsPerSecond = rps
+					fmt.Printf("Parsed RPS: %f\n", rps)
+				} else {
+					fmt.Printf("Failed to parse RPS from: %s, error: %v\n", parts[1], err)
 				}
 			}
 		}
-		if strings.Contains(line, "Latency") && strings.Contains(line, "ms") {
-			// Extract latency from line like "Latency     1.23ms    2.34ms   5.67ms   89.01%"
+		if strings.Contains(line, "Latency") && strings.Contains(line, "ms") && !strings.Contains(line, "Transfer") {
+			fmt.Printf("Found Latency line: %s\n", line)
 			parts := strings.Fields(line)
 			if len(parts) >= 2 {
 				latencyStr := strings.TrimSuffix(parts[1], "ms")
 				if lat, err := strconv.ParseFloat(latencyStr, 64); err == nil {
 					latencyMs = lat
+					fmt.Printf("Parsed Latency: %f ms\n", lat)
+				} else {
+					fmt.Printf("Failed to parse latency from: %s, error: %v\n", latencyStr, err)
 				}
 			}
 		}
 	}
+
+	fmt.Printf("Final parsed metrics - RPS: %f, Latency: %f ms\n", requestsPerSecond, latencyMs)
 
 	return &report.BenchmarkResult{
 		Tech:       tech,

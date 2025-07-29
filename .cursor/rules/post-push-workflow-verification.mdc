@@ -1,0 +1,120 @@
+---
+description: "Post-push workflow verification and GitHub Pages deployment check"
+alwaysApply: true
+---
+
+# Post-Push Workflow Verification Guide
+
+This rule provides a systematic approach to verify that code changes have been successfully deployed and are working correctly after pushing to the repository.
+
+## 🚀 Complete Verification Workflow
+
+### Step 1: Push Changes
+```bash
+# Stage and commit changes
+git add .
+git commit -m "Descriptive commit message with context"
+git push origin master
+```
+
+### Step 2: Wait for Workflow Completion
+```bash
+# Wait 4 minutes for workflows to complete (adjust as needed)
+echo "Waiting for workflows to complete..." && sleep 240
+```
+
+### Step 3: Check Workflow Status
+Use GitHub API tools to verify workflow completion:
+
+```bash
+# List recent workflow runs
+mcp_github_list_workflow_runs --owner=PriyanshuAppointy --repo=Benchmark-TechStacks --workflow_id=[WORKFLOW_ID] --perPage=10
+
+# Check specific workflow run details
+mcp_github_get_workflow_run --owner=PriyanshuAppointy --repo=Benchmark-TechStacks --run_id=[RUN_ID]
+
+# List individual jobs if needed
+mcp_github_list_workflow_jobs --owner=PriyanshuAppointy --repo=Benchmark-TechStacks --run_id=[RUN_ID]
+```
+
+### Step 4: Verify GitHub Pages Deployment
+Check that the live site reflects the changes:
+
+```bash
+# Check if main page loads correctly
+curl -s https://priyanshuappointy.github.io/Benchmark-TechStacks/ | head -20
+
+# Search for specific new content/benchmarks
+curl -s https://priyanshuappointy.github.io/Benchmark-TechStacks/ | grep -A 10 -B 5 "[NEW_CONTENT_SEARCH]"
+
+# Check for any errors or rendering issues
+curl -s https://priyanshuappointy.github.io/Benchmark-TechStacks/ | grep -i "error\|undefined\|null\|NaN"
+```
+
+## ✅ Success Indicators
+
+### Workflow Success:
+- Status: `completed`
+- Conclusion: `success`
+- All jobs show green checkmarks
+- No failed steps in job logs
+
+### GitHub Pages Success:
+- New content appears in HTML output
+- No JavaScript errors or undefined values
+- Performance metrics display correctly
+- All expected data is rendered
+
+## 🔧 Troubleshooting
+
+### If Workflow Fails:
+1. Check job logs for error details:
+   ```bash
+   mcp_github_get_job_logs --owner=PriyanshuAppointy --repo=Benchmark-TechStacks --run_id=[RUN_ID] --failed_only=true --return_content=true
+   ```
+
+2. Look for common issues:
+   - Dependency installation failures
+   - Configuration parsing errors
+   - Test execution failures
+   - Build process issues
+
+### If GitHub Pages Issues:
+1. Check if GitHub Pages workflow completed
+2. Verify HTML generation in the reports directory
+3. Look for JavaScript console errors
+4. Check if new data is in the correct format
+
+## 📋 Benchmark-Specific Checks
+
+For this performance benchmark suite:
+
+### New Technology Verification:
+1. Confirm new entries in [config/technologies.yaml](mdc:config/technologies.yaml)
+2. Check benchmark implementations in `benchmarks/[TECH]/`
+3. Verify performance metrics appear in final report
+4. Compare against expected performance ranges
+
+### Framework Benchmark Rules:
+- Only include tests that exercise framework features
+- Exclude runtime-only tests (file I/O, JSON processing)
+- Ensure proper dependency installation
+- Validate custom server configurations
+
+## 🎯 Expected Timeline
+
+- **Code Push**: Immediate
+- **Workflow Trigger**: 10-30 seconds
+- **Workflow Completion**: 5-8 minutes (depends on number of benchmarks)
+- **GitHub Pages Update**: 1-2 minutes after workflow completion
+- **Total Verification Time**: ~10 minutes
+
+## 📊 Performance Benchmarks Context
+
+When verifying benchmark additions:
+- Check requests/second metrics are reasonable
+- Verify latency measurements appear
+- Confirm memory/CPU usage is captured
+- Ensure new frameworks appear in comparison tables
+
+Use this rule whenever pushing new benchmark implementations, framework additions, or configuration changes to ensure end-to-end verification of the deployment pipeline.

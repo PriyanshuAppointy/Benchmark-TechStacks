@@ -191,6 +191,24 @@ technologies:
         type: "server"
         port: 3000
 
+  nestjs-express:
+    name: "NestJS with Express"
+    version_command: ["node", "--version"]
+    benchmarks:
+      http_server:
+        command: ["node", "benchmarks/nestjs-express/http_server/index.js"]
+        type: "server"
+        port: 3000
+
+  nestjs-fastify:
+    name: "NestJS with Fastify"
+    version_command: ["node", "--version"]
+    benchmarks:
+      http_server:
+        command: ["node", "benchmarks/nestjs-fastify/http_server/index.js"]
+        type: "server"
+        port: 3000
+
 # Example of how to add a new technology:
 # python:
 #   name: "Python"

@@ -21,6 +21,11 @@ const testFiles = [
     type: 'text'
   },
   {
+    name: 'xlarge_lines.txt',
+    lines: 1000000, // 1 million lines
+    type: 'text_lines'
+  },
+  {
     name: 'small.json',
     size: 1024, // 1KB
     type: 'json'
@@ -34,6 +39,11 @@ const testFiles = [
     name: 'large.json',
     size: 10 * 1024 * 1024, // 10MB
     type: 'json'
+  },
+  {
+    name: 'xlarge_lines.json',
+    lines: 1000000, // 1 million lines
+    type: 'json_lines'
   }
 ];
 
@@ -46,6 +56,30 @@ function generateTextContent(size) {
   }
   
   return content.substring(0, size);
+}
+
+function generateTextLines(lines) {
+  const sampleTexts = [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum.",
+    "Excepteur sint occaecat cupidatat non proident, sunt in culpa.",
+    "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit.",
+    "Sed quia non numquam eius modi tempora incidunt ut labore.",
+    "Quis autem vel eum iure reprehenderit qui in ea voluptate velit.",
+    "At vero eos et accusamus et iusto odio dignissimos ducimus.",
+    "Et harum quidem rerum facilis est et expedita distinctio."
+  ];
+
+  let content = '';
+  for (let i = 0; i < lines; i++) {
+    const textIndex = i % sampleTexts.length;
+    const lineNumber = String(i + 1).padStart(7, '0');
+    content += `Line ${lineNumber}: ${sampleTexts[textIndex]}\n`;
+  }
+  
+  return content;
 }
 
 function generateJsonContent(size) {
@@ -87,14 +121,53 @@ function generateJsonContent(size) {
   return JSON.stringify(items, null, 2);
 }
 
+function generateJsonLines(lines) {
+  const sampleCategories = ["test", "benchmark", "data", "sample", "mock"];
+  const samplePriorities = ["low", "medium", "high", "critical"];
+  const sampleTags = [
+    ["benchmark", "test"],
+    ["data", "sample"],
+    ["mock", "test", "data"],
+    ["performance", "benchmark"],
+    ["json", "test"]
+  ];
+
+  let content = '';
+  for (let i = 0; i < lines; i++) {
+    const item = {
+      id: i + 1,
+      name: `Item_${String(i + 1).padStart(7, '0')}`,
+      description: `Sample item ${i + 1} for benchmarking JSON line operations`,
+      category: sampleCategories[i % sampleCategories.length],
+      priority: samplePriorities[i % samplePriorities.length],
+      tags: sampleTags[i % sampleTags.length],
+      timestamp: new Date(Date.now() + i * 1000).toISOString(),
+      value: Math.floor(Math.random() * 10000),
+      active: i % 3 === 0
+    };
+    
+    content += JSON.stringify(item) + '\n';
+  }
+  
+  return content;
+}
+
 function generateFile(fileConfig, outputDir) {
   const filePath = path.join(outputDir, fileConfig.name);
   
-  console.log(`Generating ${fileConfig.name} (${(fileConfig.size / 1024).toFixed(1)}KB)...`);
+  if (fileConfig.lines) {
+    console.log(`Generating ${fileConfig.name} (${fileConfig.lines.toLocaleString()} lines)...`);
+  } else {
+    console.log(`Generating ${fileConfig.name} (${(fileConfig.size / 1024).toFixed(1)}KB)...`);
+  }
   
   let content;
   if (fileConfig.type === 'json') {
     content = generateJsonContent(fileConfig.size);
+  } else if (fileConfig.type === 'text_lines') {
+    content = generateTextLines(fileConfig.lines);
+  } else if (fileConfig.type === 'json_lines') {
+    content = generateJsonLines(fileConfig.lines);
   } else {
     content = generateTextContent(fileConfig.size);
   }
@@ -102,7 +175,11 @@ function generateFile(fileConfig, outputDir) {
   fs.writeFileSync(filePath, content);
   
   const actualSize = fs.statSync(filePath).size;
-  console.log(`  ✓ Generated ${fileConfig.name} (${(actualSize / 1024).toFixed(1)}KB)`);
+  if (fileConfig.lines) {
+    console.log(`  ✓ Generated ${fileConfig.name} (${fileConfig.lines.toLocaleString()} lines, ${(actualSize / 1024 / 1024).toFixed(1)}MB)`);
+  } else {
+    console.log(`  ✓ Generated ${fileConfig.name} (${(actualSize / 1024).toFixed(1)}KB)`);
+  }
 }
 
 function main() {
@@ -130,7 +207,11 @@ function main() {
     const filePath = path.join(testDataDir, fileConfig.name);
     if (fs.existsSync(filePath)) {
       const stats = fs.statSync(filePath);
-      console.log(`  ${fileConfig.name}: ${(stats.size / 1024).toFixed(1)}KB`);
+      if (fileConfig.lines) {
+        console.log(`  ${fileConfig.name}: ${fileConfig.lines.toLocaleString()} lines (${(stats.size / 1024 / 1024).toFixed(1)}MB)`);
+      } else {
+        console.log(`  ${fileConfig.name}: ${(stats.size / 1024).toFixed(1)}KB`);
+      }
     }
   });
 }
@@ -139,4 +220,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { generateTextContent, generateJsonContent, testFiles }; 
+module.exports = { generateTextContent, generateJsonContent, generateTextLines, generateJsonLines, testFiles }; 

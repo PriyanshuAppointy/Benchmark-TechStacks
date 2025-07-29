@@ -31,3 +31,6 @@ __pycache__/
 
 # VSCode
 .vscode/ 
+# Large test data files - generated locally
+test_data/xlarge_lines.txt
+test_data/xlarge_lines.json

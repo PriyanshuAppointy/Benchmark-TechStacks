@@ -17,9 +17,9 @@ git commit -m "Descriptive commit message with context"
 git push origin master
 ```
 
-### Step 2: Wait for Workflow Completion
+### Step 2: Wait 4 minutes for for Workflow Completion
 ```bash
-# Wait 4 minutes for workflows to complete (adjust as needed)
+# Wait 4 minutes for workflows to complete 
 echo "Waiting for workflows to complete..." && sleep 240
 ```
 

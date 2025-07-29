@@ -20,6 +20,19 @@ technologies:
           output: "test_data/temp_output.txt"
           iterations: "1000"
           size: "1024"
+      file_read_lines:
+        command: ["go", "run", "benchmarks/go/file_read_lines/main.go"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/xlarge_lines.txt"
+          iterations: "10"
+      file_write_lines:
+        command: ["go", "run", "benchmarks/go/file_write_lines/main.go"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output_lines.txt"
+          iterations: "10"
+          lines: "1000000"
       json_write:
         command: ["go", "run", "benchmarks/go/json_write/main.go"]
         type: "benchmark"
@@ -27,6 +40,19 @@ technologies:
           output: "test_data/temp_output.json"
           iterations: "1000"
           size: "100"
+      json_read_lines:
+        command: ["go", "run", "benchmarks/go/json_read_lines/main.go"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/xlarge_lines.json"
+          iterations: "10"
+      json_write_lines:
+        command: ["go", "run", "benchmarks/go/json_write_lines/main.go"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output_lines.json"
+          iterations: "10"
+          lines: "1000000"
       concurrency_test:
         command: ["go", "run", "benchmarks/go/concurrency_test/main.go"]
         type: "benchmark"
@@ -48,8 +74,8 @@ technologies:
           start-clients: "10"
           max-clients: "300"
           step-size: "25"
-          duration: "8"
-          threshold: "0.9"
+          duration: "10"
+          threshold: "50"
 
   bun:
     name: "Bun"
@@ -58,7 +84,7 @@ technologies:
       http_server:
         command: ["bun", "run", "benchmarks/bun/http_server/index.ts"]
         type: "server"
-        port: 3000
+        port: 3002
       file_read:
         command: ["bun", "run", "benchmarks/bun/file_read/index.ts"]
         type: "benchmark"
@@ -72,6 +98,19 @@ technologies:
           output: "test_data/temp_output.txt"
           iterations: "1000"
           size: "1024"
+      file_read_lines:
+        command: ["bun", "run", "benchmarks/bun/file_read_lines/index.ts"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/xlarge_lines.txt"
+          iterations: "10"
+      file_write_lines:
+        command: ["bun", "run", "benchmarks/bun/file_write_lines/index.ts"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output_lines.txt"
+          iterations: "10"
+          lines: "1000000"
       json_write:
         command: ["bun", "run", "benchmarks/bun/json_write/index.ts"]
         type: "benchmark"
@@ -79,6 +118,19 @@ technologies:
           output: "test_data/temp_output.json"
           iterations: "1000"
           size: "100"
+      json_read_lines:
+        command: ["bun", "run", "benchmarks/bun/json_read_lines/index.ts"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/xlarge_lines.json"
+          iterations: "10"
+      json_write_lines:
+        command: ["bun", "run", "benchmarks/bun/json_write_lines/index.ts"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output_lines.json"
+          iterations: "10"
+          lines: "1000000"
       concurrency_test:
         command: ["bun", "run", "benchmarks/bun/concurrency_test/index.ts"]
         type: "benchmark"
@@ -89,19 +141,19 @@ technologies:
         command: ["bun", "run", "benchmarks/bun/cold_start/index.ts"]
         type: "benchmark"
         default_params:
-          port: "3000"
+          port: "3002"
           iterations: "10"
           timeout: "5000"
       concurrency_limit:
         command: ["bun", "run", "benchmarks/bun/concurrency_limit/index.ts"]
         type: "benchmark"
         default_params:
-          port: "3000"
+          port: "3002"
           start-clients: "10"
           max-clients: "300"
           step-size: "25"
-          duration: "8"
-          threshold: "0.9"
+          duration: "10"
+          threshold: "50"
 
   node:
     name: "Node.js"
@@ -110,7 +162,7 @@ technologies:
       http_server:
         command: ["node", "benchmarks/node/http_server/index.js"]
         type: "server"
-        port: 3000
+        port: 3001
       file_read:
         command: ["node", "benchmarks/node/file_read/index.js"]
         type: "benchmark"
@@ -124,6 +176,19 @@ technologies:
           output: "test_data/temp_output.txt"
           iterations: "1000"
           size: "1024"
+      file_read_lines:
+        command: ["node", "benchmarks/node/file_read_lines/index.js"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/xlarge_lines.txt"
+          iterations: "10"
+      file_write_lines:
+        command: ["node", "benchmarks/node/file_write_lines/index.js"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output_lines.txt"
+          iterations: "10"
+          lines: "1000000"
       json_write:
         command: ["node", "benchmarks/node/json_write/index.js"]
         type: "benchmark"
@@ -131,6 +196,19 @@ technologies:
           output: "test_data/temp_output.json"
           iterations: "1000"
           size: "100"
+      json_read_lines:
+        command: ["node", "benchmarks/node/json_read_lines/index.js"]
+        type: "benchmark"
+        default_params:
+          file: "test_data/xlarge_lines.json"
+          iterations: "10"
+      json_write_lines:
+        command: ["node", "benchmarks/node/json_write_lines/index.js"]
+        type: "benchmark"
+        default_params:
+          output: "test_data/temp_output_lines.json"
+          iterations: "10"
+          lines: "1000000"
       concurrency_test:
         command: ["node", "benchmarks/node/concurrency_test/index.js"]
         type: "benchmark"
@@ -141,19 +219,19 @@ technologies:
         command: ["node", "benchmarks/node/cold_start/index.js"]
         type: "benchmark"
         default_params:
-          port: "3000"
+          port: "3001"
           iterations: "10"
           timeout: "5000"
       concurrency_limit:
         command: ["node", "benchmarks/node/concurrency_limit/index.js"]
         type: "benchmark"
         default_params:
-          port: "3000"
+          port: "3001"
           start-clients: "10"
           max-clients: "300"
           step-size: "25"
-          duration: "8"
-          threshold: "0.9"
+          duration: "10"
+          threshold: "50"
 
   hono-bun:
     name: "Hono.js on Bun"

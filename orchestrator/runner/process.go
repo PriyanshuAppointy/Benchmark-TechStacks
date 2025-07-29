@@ -193,9 +193,23 @@ func (r *Runner) runServerBenchmark(tech, test string, params map[string]string)
 		connections = "100"
 	}
 
-	fmt.Printf("Running load test against %s server (duration: %s, connections: %s)...\n", tech, duration, connections)
+	// Parse connections as integer to ensure it's at least as large as threads
+	connectionsInt, err := strconv.Atoi(connections)
+	if err != nil {
+		return nil, fmt.Errorf("invalid connections parameter: %s", connections)
+	}
+
+	// Ensure connections >= threads (wrk requirement)
+	threads := runtime.NumCPU()
+	if connectionsInt < threads {
+		connectionsInt = threads
+		connections = strconv.Itoa(connectionsInt)
+		fmt.Printf("Adjusted connections from %s to %s to meet wrk requirement (connections >= threads)\n", params["connections"], connections)
+	}
+
+	fmt.Printf("Running load test against %s server (duration: %s, connections: %s, threads: %d)...\n", tech, duration, connections, threads)
 	wrkCmd := exec.Command("wrk",
-		"-t", strconv.Itoa(runtime.NumCPU()),
+		"-t", strconv.Itoa(threads),
 		"-c", connections,
 		"-d", duration,
 		"--latency",
@@ -332,6 +346,9 @@ func (r *Runner) runRegularBenchmark(tech, test string, params map[string]string
 		if latency, ok := benchmarkMetrics["latencyAvgMs"].(float64); ok {
 			result.Metrics.LatencyAvgMs = latency
 		}
+		if coldStart, ok := benchmarkMetrics["coldStartTimeMs"].(float64); ok {
+			result.Metrics.ColdStartTimeMs = coldStart
+		}
 	}
 
 	return result, nil
@@ -342,7 +359,7 @@ func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, out
 	lines := strings.Split(output, "\n")
 	var requestsPerSecond float64
 	var latencyMs float64
-	var latencyP50Ms, latencyP75Ms, latencyP90Ms, latencyP95Ms, latencyP99Ms float64
+	var latencyP50Ms, latencyP75Ms, latencyP90Ms, latencyP99Ms float64
 
 	fmt.Printf("Parsing wrk output for %s:\n", tech)
 
@@ -425,9 +442,7 @@ func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, out
 						case "90":
 							latencyP90Ms = latencyValue
 							fmt.Printf("Parsed P90 Latency: %f ms\n", latencyValue)
-						case "95":
-							latencyP95Ms = latencyValue
-							fmt.Printf("Parsed P95 Latency: %f ms\n", latencyValue)
+
 						case "99":
 							latencyP99Ms = latencyValue
 							fmt.Printf("Parsed P99 Latency: %f ms\n", latencyValue)
@@ -443,8 +458,8 @@ func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, out
 		}
 	}
 
-	fmt.Printf("Final parsed metrics - RPS: %f, Avg Latency: %f ms, P50: %f ms, P75: %f ms, P90: %f ms, P95: %f ms, P99: %f ms\n",
-		requestsPerSecond, latencyMs, latencyP50Ms, latencyP75Ms, latencyP90Ms, latencyP95Ms, latencyP99Ms)
+	fmt.Printf("Final parsed metrics - RPS: %f, Avg Latency: %f ms, P50: %f ms, P75: %f ms, P90: %f ms, P99: %f ms\n",
+		requestsPerSecond, latencyMs, latencyP50Ms, latencyP75Ms, latencyP90Ms, latencyP99Ms)
 
 	return &report.BenchmarkResult{
 		Tech:       tech,
@@ -456,7 +471,6 @@ func (r *Runner) parseWrkOutput(tech, test string, params map[string]string, out
 			LatencyP50Ms:      latencyP50Ms,
 			LatencyP75Ms:      latencyP75Ms,
 			LatencyP90Ms:      latencyP90Ms,
-			LatencyP95Ms:      latencyP95Ms,
 			LatencyP99Ms:      latencyP99Ms,
 		},
 	}, nil

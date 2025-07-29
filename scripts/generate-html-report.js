@@ -64,7 +64,7 @@ const REPORT_CONFIG = {
         sortOrder: 'asc',
         description: 'Measures the time from process start to first successful HTTP response. Critical for serverless and auto-scaling scenarios.',
         betterWhen: 'lower',
-        hasNoOpsMetric: false,
+        hasNoOpsMetric: true,
         isHttpServer: false,
         calculation: 'Data: Cold start measurement by spawning server processes and measuring time to first successful response • Calculation: Average cold start time across multiple iterations (ms)'
     },
@@ -411,7 +411,7 @@ ${this.headTemplate()}
               !config.hasNoOpsMetric ? '<div class="table-cell">Ops/Second</div>' : ''}
             ${config.isHttpServer ? '<div class="table-cell">Avg Latency (ms)</div>' : 
               '<div class="table-cell">Time (ms)</div>'}
-            ${config.isHttpServer ? '<div class="table-cell">P95 Latency (ms)</div>' : ''}
+                            
             ${config.isHttpServer ? '<div class="table-cell">P99 Latency (ms)</div>' : ''}
             <div class="table-cell">Memory (MB)</div>
             <div class="table-cell">CPU (%)</div>
@@ -426,7 +426,7 @@ ${this.headTemplate()}
                   !config.hasNoOpsMetric ? `<div class="table-cell metric-cell">${(result.metrics.operationsPerSecond || 0).toLocaleString()}</div>` : ''}
                 ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyAvgMs || 0).toFixed(3)}</div>` : 
                   `<div class="table-cell metric-cell">${(result.metrics.totalTimeMs || 0).toFixed(2)}</div>`}
-                ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyP95Ms || 0).toFixed(3)}</div>` : ''}
+                
                 ${config.isHttpServer ? `<div class="table-cell metric-cell">${(result.metrics.latencyP99Ms || 0).toFixed(3)}</div>` : ''}
                 <div class="table-cell metric-cell">${(result.metrics.maxMemoryMB || 0).toFixed(1)}</div>
                 <div class="table-cell metric-cell">${(result.metrics.avgCpuPercent || 0).toFixed(1)}</div>
@@ -953,7 +953,7 @@ ${this.headTemplate()}
             align-items: center;
         }
 
-        /* HTTP Server tests have 7 columns: Tech, Requests/sec, Avg Latency, P95, P99, Memory, CPU */
+                    /* HTTP Server tests have 6 columns: Tech, Requests/sec, Avg Latency, P99, Memory, CPU */
         .test-card[data-test-type="http_server"] .table-header,
         .test-card[data-test-type="http_server"] .table-row {
             grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1fr 1fr;

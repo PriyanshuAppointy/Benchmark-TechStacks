@@ -102,7 +102,13 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`Testing concurrency limits from ${config.startClients} to ${config.maxClients} clients (step: ${config.stepSize})`);
+    console.log(`🚀 Starting concurrency limit test for Bun HTTP server`);
+    
+    // Calculate total expected tests for progress tracking
+    const totalExpectedTests = Math.floor((config.maxClients - config.startClients) / config.stepSize) + 1;
+    console.log(`📊 Testing from ${config.startClients} to ${config.maxClients} clients (step: ${config.stepSize}) - Up to ${totalExpectedTests} iterations expected`);
+    console.log(`⏱️  Each test runs for ${config.duration} seconds`);
+    console.log(`🎯 Will stop when performance drops below ${(config.threshold * 100).toFixed(0)}% of peak\n`);
 
     const startTime = performance.now();
     let maxRPS = 0;
@@ -112,30 +118,43 @@ async function main() {
     // Test increasing concurrency levels
     for (let clients = config.startClients; clients <= config.maxClients; clients += config.stepSize) {
         totalTests++;
-        console.log(`Testing ${clients} concurrent clients...`);
+        const elapsed = Math.round((performance.now() - startTime) / 1000);
+        console.log(`🔄 [${totalTests}/${totalExpectedTests}] Testing ${clients} concurrent clients... (elapsed: ${elapsed}s)`);
 
         try {
             const rps = await testConcurrencyLevel(clients, config.duration, config.port);
-            console.log(`  -> ${clients} clients: ${rps.toFixed(2)} RPS`);
+            process.stdout.write(`✅ ${clients} clients: ${rps.toFixed(2)} RPS`);
 
             if (rps > maxRPS) {
                 maxRPS = rps;
                 maxConcurrency = clients;
+                console.log(` 🆕 NEW PEAK!`);
             } else if (rps < maxRPS * config.threshold) {
                 // Performance degraded below threshold, stop testing
-                console.log(`Performance degraded below ${(config.threshold * 100).toFixed(0)}% threshold. Max concurrency: ${maxConcurrency} clients`);
+                console.log(` 📉 Below threshold (${rps.toFixed(2)} < ${(maxRPS * config.threshold).toFixed(2)})`);
+                console.log(`🏁 Performance degraded below ${(config.threshold * 100).toFixed(0)}% threshold. Max concurrency: ${maxConcurrency} clients at ${maxRPS.toFixed(2)} RPS`);
                 break;
+            } else {
+                console.log(` 📊 Still good (${((rps / maxRPS) * 100).toFixed(1)}% of peak)`);
             }
 
             // Small delay between tests
-            await sleep(500);
+            await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
-            console.error(`Error testing ${clients} clients: ${error.message}`);
+            console.error(`❌ Error testing ${clients} clients:`, error);
             continue;
         }
+
+        // Small delay between tests
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     const totalTime = performance.now() - startTime;
+    
+    console.log(`\n🎉 Concurrency test completed!`);
+    console.log(`📈 Peak performance: ${maxConcurrency} clients at ${maxRPS.toFixed(2)} RPS`);
+    console.log(`⏱️  Total test duration: ${Math.round(totalTime / 1000)}s`);
+    console.log(`🧪 Tests performed: ${totalTests}/${totalExpectedTests}\n`);
 
     const result = {
         operations: totalTests,

@@ -39,34 +39,55 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Testing concurrency limits from %d to %d clients (step: %d)\n", startClients, maxClients, stepSize)
+	// Calculate total expected tests for progress tracking
+	totalExpectedTests := (maxClients-startClients)/stepSize + 1
+	fmt.Printf("🚀 Starting concurrency limit test for Go HTTP server\n")
+	fmt.Printf("📊 Testing from %d to %d clients (step: %d) - Up to %d iterations expected\n",
+		startClients, maxClients, stepSize, totalExpectedTests)
+	fmt.Printf("⏱️  Each test runs for %.1f seconds\n", duration)
+	fmt.Printf("🎯 Will stop when performance drops below %.0f%% of peak\n\n", thresholdPercent*100)
 
 	startTime := time.Now()
 	maxRPS := 0.0
 	maxConcurrency := startClients
 	totalTests := 0
 
+	// Remove global timeout - let the test run as designed
+	// globalTimeout := time.Now().Add(2 * time.Minute)
+
 	// Test increasing concurrency levels
 	for clients := startClients; clients <= maxClients; clients += stepSize {
+		// Remove timeout check - let it run
+		// if time.Now().After(globalTimeout) {
+		//	fmt.Printf("Global timeout reached. Stopping at %d clients.\n", maxConcurrency)
+		//	break
+		// }
+
 		totalTests++
-		fmt.Printf("Testing %d concurrent clients...\n", clients)
+		elapsed := time.Since(startTime)
+		fmt.Printf("🔄 [%d/%d] Testing %d concurrent clients... (elapsed: %v)\n",
+			totalTests, totalExpectedTests, clients, elapsed.Round(time.Second))
 
 		rps, err := testConcurrencyLevel(clients, duration, port)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error testing %d clients: %v\n", clients, err)
+			fmt.Fprintf(os.Stderr, "❌ Error testing %d clients: %v\n", clients, err)
 			continue
 		}
 
-		fmt.Printf("  -> %d clients: %.2f RPS\n", clients, rps)
+		fmt.Printf("✅ %d clients: %.2f RPS", clients, rps)
 
 		if rps > maxRPS {
 			maxRPS = rps
 			maxConcurrency = clients
+			fmt.Printf(" 🆕 NEW PEAK!\n")
 		} else if rps < maxRPS*thresholdPercent {
 			// Performance degraded below threshold, stop testing
-			fmt.Printf("Performance degraded below %.0f%% threshold. Max concurrency: %d clients\n",
-				thresholdPercent*100, maxConcurrency)
+			fmt.Printf(" 📉 Below threshold (%.2f < %.2f)\n", rps, maxRPS*thresholdPercent)
+			fmt.Printf("🏁 Performance degraded below %.0f%% threshold. Max concurrency: %d clients at %.2f RPS\n",
+				thresholdPercent*100, maxConcurrency, maxRPS)
 			break
+		} else {
+			fmt.Printf(" 📊 Still good (%.1f%% of peak)\n", (rps/maxRPS)*100)
 		}
 
 		// Small delay between tests
@@ -74,6 +95,11 @@ func main() {
 	}
 
 	totalTime := time.Since(startTime)
+
+	fmt.Printf("\n🎉 Concurrency test completed!\n")
+	fmt.Printf("📈 Peak performance: %d clients at %.2f RPS\n", maxConcurrency, maxRPS)
+	fmt.Printf("⏱️  Total test duration: %v\n", totalTime.Round(time.Second))
+	fmt.Printf("🧪 Tests performed: %d/%d\n\n", totalTests, totalExpectedTests)
 
 	result := ConcurrencyResult{
 		Operations:           totalTests,
